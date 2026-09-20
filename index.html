@@ -1,188 +1,421 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>商业级旋转飞刀割草</title>
-<style>
-  body { margin: 0; padding: 0; background: #000; overflow: hidden; touch-action: none; font-family: sans-serif; }
-  canvas { display: block; width: 100vw; height: 100vh; }
-  #ui { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 10; color: #fff; text-shadow: 2px 2px 4px #000; font-size: 18px; display: flex; justify-content: space-between; pointer-events: none; }
-  #bossBar { position: absolute; top: 60px; left: 10%; width: 80%; height: 15px; background: rgba(0,0,0,0.5); border: 2px solid #fff; border-radius: 10px; z-index: 10; display: none; overflow: hidden; }
-  #bossHp { height: 100%; background: #f00; width: 100%; transition: width 0.2s; }
-  .panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 20; text-align: center; background: rgba(0,0,0,0.85); padding: 30px; border-radius: 15px; color: #fff; }
-  button { padding: 15px 40px; font-size: 22px; background: #ff4400; color: #fff; border: none; border-radius: 10px; margin-top: 20px; pointer-events: auto; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>转刀割草 - 商业版原型</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #222; touch-action: none; font-family: 'Arial', sans-serif; }
+        canvas { display: block; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .hud-top { position: absolute; top: 20px; left: 20px; color: white; font-size: 20px; font-weight: bold; text-shadow: 2px 2px 0 #000; }
+        .xp-bar-container { position: absolute; top: 0; left: 0; width: 100%; height: 10px; background: #444; }
+        .xp-bar { height: 100%; background: #00ff00; width: 0%; transition: width 0.2s; }
+        #level-text { position: absolute; top: 15px; right: 20px; color: yellow; font-size: 24px; font-weight: bold; text-shadow: 2px 2px 0 #000; }
+        #game-over { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: white; pointer-events: auto; }
+        button { padding: 15px 30px; font-size: 20px; background: #ff9900; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; box-shadow: 0 4px 0 #cc7a00; }
+        button:active { transform: translateY(4px); box-shadow: none; }
+    </style>
 </head>
 <body>
-<div id="ui">
-  <div>HP:<span id="hp">5</span> | 分数:<span id="score">0</span></div>
-  <div>连击:<span id="combo">0</span><br>时间:<span id="time">0:00</span></div>
-</div>
-<div id="bossBar"><div id="bossHp"></div></div>
-<canvas id="game"></canvas>
-<div id="startPanel" class="panel"><h1>旋转飞刀割草</h1><button id="startBtn">开始游戏</button></div>
-<div id="overPanel" class="panel" style="display:none"><h1>游戏结束</h1><p>分数: <span id="finalScore">0</span></p><button id="restartBtn">重新开始</button></div>
+
+    <!-- 游戏画布 -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- UI 层 -->
+    <div id="ui-layer">
+        <div class="xp-bar-container"><div class="xp-bar" id="xpBar"></div></div>
+        <div class="hud-top">击杀数: <span id="score">0</span></div>
+        <div id="level-text">Lv.1</div>
+        
+        <div id="game-over">
+            <h1 style="font-size: 50px; text-shadow: 3px 3px 0 #000; margin-bottom: 20px;">游戏结束</h1>
+            <p id="final-score" style="font-size: 24px; margin-bottom: 30px;">最终得分: 0</p>
+            <button onclick="restartGame()">重新开始</button>
+        </div>
+    </div>
 
 <script>
-const canvas = document.getElementById('game');
+/**
+ * 商业级小游戏核心逻辑 - 极简版
+ * 包含：渲染循环、碰撞检测、对象池概念、升级系统
+ */
+
+const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const uiHp = document.getElementById('hp'), uiScore = document.getElementById('score'), uiCombo = document.getElementById('combo'), uiTime = document.getElementById('time');
-const bossBar = document.getElementById('bossBar'), bossHpBar = document.getElementById('bossHp');
-const startPanel = document.getElementById('startPanel'), overPanel = document.getElementById('overPanel');
+const scoreEl = document.getElementById('score');
+const xpBarEl = document.getElementById('xpBar');
+const levelTextEl = document.getElementById('level-text');
+const gameOverEl = document.getElementById('game-over');
+const finalScoreEl = document.getElementById('final-score');
 
-let W, H;
-function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
-window.addEventListener('resize', resize); resize();
+// 适配屏幕
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
 
-const imgs = {};
-['bg','hero','knife','monster','monster2','boss','boss2','effect'].forEach(k=>{
-  imgs[k] = new Image(); imgs[k].src = k+'.jpg';
-  imgs[k].onload = ()=> removeWhite(imgs[k]);
+// --- 游戏配置 ---
+const CONFIG = {
+    playerSpeed: 3, // 玩家移动速度（此处设为0，改为跟随鼠标/触摸，或者自动）
+    enemyBaseSpeed: 1.5,
+    knifeSpeed: 0.15, // 旋转速度
+    spawnRate: 60, // 敌人生成频率（帧数）
+};
+
+// --- 游戏状态 ---
+let gameState = {
+    isRunning: true,
+    score: 0,
+    level: 1,
+    xp: 0,
+    xpToNextLevel: 10,
+    frames: 0,
+    entities: {
+        player: null,
+        knives: [],
+        enemies: [],
+        gems: [] // 经验宝石
+    }
+};
+
+// --- 类定义 ---
+
+class Player {
+    constructor() {
+        this.x = canvas.width / 2;
+        this.y = canvas.height / 2;
+        this.radius = 20;
+        this.color = '#3498db';
+        this.hp = 100;
+        this.maxHp = 100;
+        // 武器属性
+        this.knifeCount = 3;
+        this.knifeDistance = 80;
+        this.angleOffset = 0;
+    }
+
+    update(inputX, inputY) {
+        // 简单的平滑移动逻辑 (向触摸点移动)
+        if (inputX !== null) {
+            const dx = inputX - this.x;
+            const dy = inputY - this.y;
+            this.x += dx * 0.1; 
+            this.y += dy * 0.1;
+        }
+
+        // 边界限制
+        this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+        this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+
+        // 旋转武器角度
+        this.angleOffset += CONFIG.knifeSpeed;
+    }
+
+    draw() {
+        // 绘制玩家 (用圆形代替)
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.closePath();
+
+        // 绘制血条
+        const hpPercent = this.hp / this.maxHp;
+        ctx.fillStyle = 'red';
+        ctx.fillRect(this.x - 20, this.y + 30, 40, 5);
+        ctx.fillStyle = '#0f0';
+        ctx.fillRect(this.x - 20, this.y + 30, 40 * hpPercent, 5);
+    }
+}
+
+class Knife {
+    constructor(owner, index, total) {
+        this.owner = owner;
+        this.index = index;
+        this.total = total;
+        this.radius = 8;
+        this.damage = 10;
+    }
+
+    getPosition() {
+        const angle = this.owner.angleOffset + (Math.PI * 2 / this.total) * this.index;
+        return {
+            x: this.owner.x + Math.cos(angle) * this.owner.knifeDistance,
+            y: this.owner.y + Math.sin(angle) * this.owner.knifeDistance
+        };
+    }
+
+    draw() {
+        const pos = this.getPosition();
+        ctx.save();
+        ctx.translate(pos.x, pos.y);
+        // 计算旋转角度让刀尖朝外
+        const angle = this.owner.angleOffset + (Math.PI * 2 / this.total) * this.index;
+        ctx.rotate(angle);
+        
+        // 绘制飞刀形状
+        ctx.beginPath();
+        ctx.moveTo(10, 0);
+        ctx.lineTo(-5, 5);
+        ctx.lineTo(-5, -5);
+        ctx.closePath();
+        ctx.fillStyle = '#f1c40f'; // 金色飞刀
+        ctx.fill();
+        
+        ctx.restore();
+    }
+}
+
+class Enemy {
+    constructor() {
+        // 从屏幕边缘随机生成
+        if (Math.random() < 0.5) {
+            this.x = Math.random() < 0.5 ? -20 : canvas.width + 20;
+            this.y = Math.random() * canvas.height;
+        } else {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() < 0.5 ? -20 : canvas.height + 20;
+        }
+        
+        this.radius = 15;
+        this.speed = CONFIG.enemyBaseSpeed + (gameState.level * 0.1); // 随等级变快
+        this.hp = 20 + (gameState.level * 5);
+        this.color = '#e74c3c';
+    }
+
+    update(targetX, targetY) {
+        const dx = targetX - this.x;
+        const dy = targetY - this.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        
+        if (dist > 0) {
+            this.x += (dx / dist) * this.speed;
+            this.y += (dy / dist) * this.speed;
+        }
+    }
+
+    draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.strokeStyle = '#c0392b';
+        ctx.stroke();
+        ctx.closePath();
+    }
+}
+
+class Gem {
+    constructor(x, y, value) {
+        this.x = x;
+        this.y = y;
+        this.value = value;
+        this.radius = 6;
+        this.magnetized = false;
+    }
+
+    update(playerX, playerY) {
+        const dx = playerX - this.x;
+        const dy = playerY - this.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+
+        // 磁吸效果
+        if (dist < 100) this.magnetized = true;
+
+        if (this.magnetized) {
+            this.x += (dx / dist) * 8; // 快速飞向玩家
+            this.y += (dy / dist) * 8;
+        }
+    }
+
+    draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#2ecc71'; // 绿色经验球
+        ctx.fill();
+        ctx.closePath();
+    }
+}
+
+// --- 输入处理 ---
+let inputX = null;
+let inputY = null;
+
+// 触摸/鼠标移动控制
+window.addEventListener('touchmove', e => {
+    e.preventDefault();
+    inputX = e.touches[0].clientX;
+    inputY = e.touches[0].clientY;
+}, {passive: false});
+
+window.addEventListener('mousemove', e => {
+    inputX = e.clientX;
+    inputY = e.clientY;
 });
 
-function removeWhite(img) {
-  try {
-    const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
-    const cx = c.getContext('2d'); cx.drawImage(img, 0, 0);
-    const d = cx.getImageData(0,0,c.width,c.height);
-    for(let i=0;i<d.data.length;i+=4) {
-      if(d.data[i]>240 && d.data[i+1]>240 && d.data[i+2]>240) d.data[i+3]=0;
+// --- 游戏主循环 ---
+
+function initGame() {
+    gameState.isRunning = true;
+    gameState.score = 0;
+    gameState.level = 1;
+    gameState.xp = 0;
+    gameState.xpToNextLevel = 10;
+    gameState.frames = 0;
+    
+    gameState.entities.player = new Player();
+    gameState.entities.knives = [];
+    gameState.entities.enemies = [];
+    gameState.entities.gems = [];
+
+    // 初始化飞刀
+    updateKnives();
+
+    scoreEl.innerText = '0';
+    levelTextEl.innerText = 'Lv.1';
+    xpBarEl.style.width = '0%';
+    gameOverEl.style.display = 'none';
+    
+    // 重置输入位置到中心，防止开局乱跑
+    inputX = canvas.width / 2;
+    inputY = canvas.height / 2;
+
+    loop();
+}
+
+function updateKnives() {
+    const count = gameState.entities.player.knifeCount;
+    gameState.entities.knives = [];
+    for(let i=0; i<count; i++) {
+        gameState.entities.knives.push(new Knife(gameState.entities.player, i, count));
     }
-    cx.putImageData(d,0,0); img.src = c.toDataURL();
-  } catch(e) {}
 }
 
-let state = { running:false, hp:5, score:0, combo:0, time:0, knives:[], enemies:[], particles:[], bgY:0, hero:{x:0,y:0}, boss:null, lastSpawn:0 };
+function checkLevelUp() {
+    if (gameState.xp >= gameState.xpToNextLevel) {
+        gameState.level++;
+        gameState.xp = 0;
+        gameState.xpToNextLevel = Math.floor(gameState.xpToNextLevel * 1.5);
+        
+        // 升级奖励：每级加一把刀
+        gameState.entities.player.knifeCount++;
+        gameState.entities.player.knifeDistance += 5; // 范围变大
+        updateKnives();
 
-function reset() {
-  state = { running:true, hp:5, score:0, combo:0, time:0, knives:[], enemies:[], particles:[], bgY:0, hero:{x:W/2,y:H-80}, boss:null, lastSpawn:0 };
-  uiHp.textContent = state.hp; uiScore.textContent = state.score; uiCombo.textContent = state.combo;
-  bossBar.style.display = 'none'; startPanel.style.display = 'none'; overPanel.style.display = 'none';
-  for(let i=0;i<3;i++) state.knives.push({angle:i*(Math.PI*2/3), r:45});
-}
-
-function spawnEnemy() {
-  const isBoss = state.time > 30 && Math.random() < 0.05 && !state.boss;
-  const x = Math.random()*(W-60)+30;
-  if(isBoss) {
-    state.boss = {x:W/2, y:-100, hp:500, maxHp:500, type:Math.random()>0.5?2:1};
-    bossBar.style.display = 'block'; bossHpBar.style.width = '100%';
-  } else {
-    state.enemies.push({x, y:-50, hp:1, type:Math.random()>0.5?2:1});
-  }
-}
-
-function explode(x, y) {
-  for(let i=0;i<8;i++) state.particles.push({x, y, vx:(Math.random()-0.5)*5, vy:(Math.random()-0.5)*5, life:20});
-}
-
-function update(dt) {
-  if(!state.running) return;
-  state.time += dt/1000; uiTime.textContent = Math.floor(state.time/60)+':'+String(Math.floor(state.time%60)).padStart(2,'0');
-  
-  state.bgY = (state.bgY + dt*0.1) % H;
-  
-  if(state.hero.targetX !== undefined) {
-    state.hero.x += (state.hero.targetX - state.hero.x) * 0.2;
-    state.hero.y += (state.hero.targetY - state.hero.y) * 0.2;
-  }
-  
-  state.knives.forEach(k=> k.angle += dt*0.005);
-  
-  if(Date.now() - state.lastSpawn > 800) { spawnEnemy(); state.lastSpawn = Date.now(); }
-  
-  state.enemies.forEach(e=> e.y += dt*0.1);
-  state.enemies = state.enemies.filter(e=> e.y < H+50);
-  
-  if(state.boss) {
-    state.boss.y += dt*0.03;
-    if(Math.abs(state.boss.x - state.hero.x) < 60 && Math.abs(state.boss.y - state.hero.y) < 60) {
-      state.hp--; uiHp.textContent = state.hp; state.boss.x += 100;
-      if(state.hp<=0) gameOver();
+        levelTextEl.innerText = 'Lv.' + gameState.level;
+        
+        // 升级特效文字（简化版）
+        const p = gameState.entities.player;
+        createFloatingText("LEVEL UP!", p.x, p.y - 50, '#ffff00');
     }
-  }
-  
-  state.knives.forEach(k=>{
-    const kx = state.hero.x + Math.cos(k.angle)*k.r;
-    const ky = state.hero.y + Math.sin(k.angle)*k.r;
-    state.enemies.forEach(e=>{
-      if(Math.abs(kx-e.x)<40 && Math.abs(ky-e.y)<40) {
-        e.hp--; explode(e.x, e.y);
-        if(e.hp<=0) { state.score+=10; state.combo++; uiScore.textContent=state.score; uiCombo.textContent=state.combo; }
-      }
+    const percent = (gameState.xp / gameState.xpToNextLevel) * 100;
+    xpBarEl.style.width = percent + '%';
+}
+
+// 简单的浮动文字数组
+let floatingTexts = [];
+function createFloatingText(text, x, y, color) {
+    floatingTexts.push({text, x, y, color, life: 60});
+}
+
+function loop() {
+    if (!gameState.isRunning) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // 背景网格（装饰）
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(let i=0; i<canvas.width; i+=50) { ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); }
+    for(let i=0; i<canvas.height; i+=50) { ctx.moveTo(0,i); ctx.lineTo(canvas.width,i); }
+    ctx.stroke();
+
+    const player = gameState.entities.player;
+
+    // 1. 生成敌人
+    gameState.frames++;
+    if (gameState.frames % Math.max(10, CONFIG.spawnRate - gameState.level * 2) === 0) {
+        gameState.entities.enemies.push(new Enemy());
+    }
+
+    // 2. 更新和绘制玩家
+    player.update(inputX, inputY);
+    player.draw();
+
+    // 3. 更新和绘制飞刀 & 碰撞检测
+    gameState.entities.knives.forEach(knife => {
+        knife.draw();
+        const kPos = knife.getPosition();
+        
+        // 检测飞刀打敌人
+        for (let i = gameState.entities.enemies.length - 1; i >= 0; i--) {
+            const enemy = gameState.entities.enemies[i];
+            const dx = kPos.x - enemy.x;
+            const dy = kPos.y - enemy.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            
+            if (dist < knife.radius + enemy.radius) {
+                enemy.hp -= knife.damage;
+                createFloatingText(knife.damage, enemy.x, enemy.y, '#fff');
+                
+                // 击退效果
+                enemy.x += (dx/dist) * 10;
+                enemy.y += (dy/dist) * 10;
+
+                if (enemy.hp <= 0) {
+                    // 敌人死亡
+                    gameState.entities.enemies.splice(i, 1);
+                    gameState.score++;
+                    scoreEl.innerText = gameState.score;
+                    // 掉落宝石
+                    gameState.entities.gems.push(new Gem(enemy.x, enemy.y, 1));
+                }
+            }
+        }
     });
-    if(state.boss && Math.abs(kx-state.boss.x)<70 && Math.abs(ky-state.boss.y)<70) {
-      state.boss.hp-=5; explode(state.boss.x, state.boss.y);
-      if(state.boss.hp<=0) { state.score+=100; state.combo++; uiScore.textContent=state.score; state.boss=null; bossBar.style.display='none'; }
-      else bossHpBar.style.width = (state.boss.hp/state.boss.maxHp*100)+'%';
+
+    // 4. 更新和绘制敌人 & 玩家受伤检测
+    for (let i = gameState.entities.enemies.length - 1; i >= 0; i--) {
+        const enemy = gameState.entities.enemies[i];
+        enemy.update(player.x, player.y);
+        enemy.draw();
+
+        // 撞玩家
+        const dx = player.x - enemy.x;
+        const dy = player.y - enemy.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        
+        if (dist < player.radius + enemy.radius) {
+            player.hp -= 0.5; // 持续伤害
+            if (player.hp <= 0) {
+                endGame();
+            }
+        }
     }
-  });
-  
-  state.enemies = state.enemies.filter(e=> e.hp>0);
-  state.particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.life--;});
-  state.particles = state.particles.filter(p=>p.life>0);
-}
 
-function draw() {
-  ctx.clearRect(0,0,W,H);
-  if(imgs.bg.complete) {
-    ctx.drawImage(imgs.bg, 0, state.bgY, W, H);
-    ctx.drawImage(imgs.bg, 0, state.bgY-H, W, H);
-  }
-  
-  state.enemies.forEach(e=>{
-    const img = e.type==1?imgs.monster:imgs.monster2;
-    if(img.complete) ctx.drawImage(img, e.x-25, e.y-25, 50, 50);
-  });
-  
-  if(state.boss && imgs.boss.complete) {
-    const bImg = state.boss.type==1?imgs.boss:imgs.boss2;
-    ctx.drawImage(bImg, state.boss.x-50, state.boss.y-50, 100, 100);
-  }
-  
-  if(imgs.hero.complete) ctx.drawImage(imgs.hero, state.hero.x-30, state.hero.y-30, 60, 60);
-  
-  state.knives.forEach(k=>{
-    const kx = state.hero.x + Math.cos(k.angle)*k.r;
-    const ky = state.hero.y + Math.sin(k.angle)*k.r;
-    ctx.save(); ctx.translate(kx, ky); ctx.rotate(k.angle);
-    if(imgs.knife.complete) ctx.drawImage(imgs.knife, -15, -15, 30, 30);
-    ctx.restore();
-  });
-  
-  state.particles.forEach(p=>{
-    if(imgs.effect.complete) ctx.drawImage(imgs.effect, p.x-30, p.y-30, 60, 60);
-  });
-}
+    // 5. 更新和绘制宝石
+    for (let i = gameState.entities.gems.length - 1; i >= 0; i--) {
+        const gem = gameState.entities.gems[i];
+        gem.update(player.x, player.y);
+        gem.draw();
 
-let lastT = 0;
-function loop(t) {
-  const dt = Math.min(t-lastT, 50); lastT = t;
-  if(state.running) update(dt);
-  draw();
-  requestAnimationFrame(loop);
-}
+        const dx = player.x - gem.x;
+        const dy = player.y - gem.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
 
-canvas.addEventListener('touchmove', e=>{
-  e.preventDefault();
-  const touch = e.changedTouches[0];
-  state.hero.targetX = touch.clientX; state.hero.targetY = touch.clientY;
-});
-canvas.addEventListener('mousemove', e=>{
-  state.hero.targetX = e.clientX; state.hero.targetY = e.clientY;
-});
+        if (dist < player.radius + gem.radius) {
+            gameState.entities.gems.splice(i, 1);
+            gameState.xp += gem.value;
+            checkLevelUp();
+        }
+    }
 
-function gameOver() {
-  state.running = false;
-  document.getElementById('finalScore').textContent = state.score;
-  overPanel.style.display = 'block';
-}
-
-document.getElementById('startBtn').addEventListener('click', reset);
-document.getElementById('restartBtn').addEventListener('click', reset);
-
-requestAnimationFrame(loop);
-</script>
-</body>
-</html>
+    // 6. 绘制浮动文字
+    for (let i = floatingTexts.length -
