@@ -1,145 +1,149 @@
- 
-<！doctype让超文本标记语言怪物=[];超文本标记语言超文本标记语言> 
-<超文本标记语言 朗="zh-CN">
-<头>
-    <元 字符集="UTF-8">
-    <元 姓名="视口" 内容="宽度=设备宽度，初始比例=1.0，最大比例=1.0，用户可缩放=否">
-    <标题>飞行射击小游戏</标题>
-><身体{边缘：0；填充：0；背景：#000；颜色：#FFF；文本对齐：中心；溢出：隐藏的；}<身体{边缘：0；填充：0；背景：#000；颜色：#FFF；文本对齐：中心；溢出：隐藏的；}
-<
-#gameContainer{宽度：100VW；高度：100VH；位置：相对的；溢出：隐藏的；背景：URL('bg.jpg')无重复中心/覆盖；}
-。实体 { 位置: 绝对的; 用户选择: 没有一个; }
-#英雄{宽度：60px；底部：20px；左：50%；改变：translateX(-50%)；}
-。怪物{容忍度：50px；顶端：-50px；}
-。老板{宽度：100px；顶端：-100PX；}
-。武器{宽度：20px；位置：绝对的；}
-。效果{宽度：40px；位置：绝对的；指针事件：没有一个；}
-#分类板{位置：绝对；顶端：10px；左：10px；字体大小：20px；z指数：100；}
-#startBtn{位置：绝对的；顶端：50%；左：50%；改变：翻译(-50%，-50%)；填充：15px30px；字体大小：24px；背景：#ff4400；颜色：#FFF；边界：没有一个；边界半径：10px；Z指数：200；}
-</风格>
-</头>
-<身体>
-<div 身份标识="gameContainer">
-<div 身份标识="记分板">分数：0</div>
-<IMG src="hero.jpg" 身份标识="英雄" 班级="实体">
-<按钮 身份标识="startBtn">开始游戏</按钮>
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>旋转飞刀割草</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #000; overflow: hidden; touch-action: none; }
+#gameContainer { width: 100vw; height: 100vh; position: relative; overflow: hidden; background: url('bg.jpg') no-repeat center/cover; }
+.entity { position: absolute; user-select: none; }
+#hero { width: 60px; height: 60px; bottom: 20px; left: 50%; transform: translateX(-50%); }
+.monster { width: 50px; height: 50px; }
+.boss { width: 100px; height: 100px; }
+.weapon { width: 20px; height: 20px; }
+.effect { width: 40px; height: 40px; pointer-events: none; }
+#scoreBoard { position: absolute; top: 10px; left: 10px; font-size: 20px; color: #fff; z-index: 100; text-shadow: 1px 1px 2px #000; font-family: Arial, sans-serif; }
+#startBtn { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 15px 30px; font-size: 24px; background: #ff4400; color: #fff; border: none; border-radius: 10px; z-index: 200; font-family: Arial, sans-serif; }
+</style>
+</head>
+<body>
+<div id="gameContainer">
+    <div id="scoreBoard">分数: 0</div>
+    <img src="hero.jpg" id="hero" class="entity">
+    <button id="startBtn">开始游戏</button>
 </div>
 
-<脚本>
-Const容器=文件.getElementById('gameContainer')；
-Const英雄=文件.getElementById('英雄')；
-Const记分板=文件.getElementById('Scoreboard')；
-ConstartBtn=文件.getElementById('startBtn')；
-        
-递分=0；
-让gameloop；
-让 怪物=[];
-武器=[]；
-让IsPlaying=假的；
+<script>
+var container = document.getElementById('gameContainer');
+var hero = document.getElementById('hero');
+var scoreBoard = document.getElementById('scoreBoard');
+var startBtn = document.getElementById('startBtn');
 
-        // 触摸/鼠标移动控制主角
-容器.addEventListener('touchmove'，(e)=>{
-e.preventDefault()；
-Const触摸=e.触摸[0]；
-constx=触摸.ClientX-英雄.宽容/2；
-如果(正在播放)英雄.风格.左=X+'px'；
-        });
-容器.addEventListener('鼠标移动'，(e)=>{
-Constx=e.ClientX-英雄.宽容/2；
-如果(正在播放)英雄.风格.左=X+'px'；
-        });
+var score = 0;
+var isPlaying = false;
+var monsters = [];
+var weapons = [];
+var shootTimer = null;
+var spawnTimer = null;
+var animId = null;
 
-// 发射飞刀
-=[];超文本标记语言超文本标记语言> 
-！doctype让超文本标记语言怪物
-<
-刀.src='Knife.jpg'；
-刀.className=“武器实体”；
-刀.风格.左=(英雄.offsetLeft+英雄.宽度/2-10)+'px'；
-刀.风格.底部=(英雄.offsetHeight+20)+'px'；
->
-标题
-</
+container.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+    if (!isPlaying) return;
+    var touch = e.touches[0];
+    var x = touch.clientX - 30;
+    if (x < 0) x = 0;
+    if (x > window.innerWidth - 60) x = window.innerWidth - 60;
+    hero.style.left = x + 'px';
+});
 
-！doctype让超文本标记语言怪物
-<
-如果(！ 正在播放)返回；
-Const怪物=文件.createElement('img')；
-怪物src=数学.随机()>0.5？怪物。JPG'：怪物2.JPG'；
-怪物.className='Monster实体'；
-怪物.风格.左=(数学.随机()*(窗户.innerWidth-50))+'px'；
-容器.appendChild(怪物)；
-怪物.推(怪物);
-            
-//随机生成Boss
-如果(数学.随机()>0.9) {
-Const老板=文件.createElement('img')；
-老板儿src=数学.随机()>0.5？'boss.jpg'：'boss2.jpg'；
-老板.className='老板实体'；
-老板.风格.左=(数学.随机()*(窗户.innerWidth-100))+'px'；
->
-div
-<
-<
+container.addEventListener('mousemove', function(e) {
+    if (!isPlaying) return;
+    var x = e.clientX - 30;
+    if (x < 0) x = 0;
+    if (x > window.innerWidth - 60) x = window.innerWidth - 60;
+    hero.style.left = x + 'px';
+});
 
-<
-功能 更新() {
-如果(！正在播放)返回；
-            
-容器.addEventListener('touchmove'，(e)=>{
-武器.foreach((w，指数)=>{
-w。风格.底部=(parseInt(w.风格.底部)+10)+'px'；
-如果(parseInt(w.风格.底部)>窗户.innerHeight){
-w。移除()；
-武器.拼接(指数，1)；
-！doctype超文本标记语言>}
-}风格。显示；星形=sster，1500表格true；IsPlaying产卵怪兽，equestAnimationFrame；；startBtnTer，1500表格true；IsPlaying产卵怪兽，equestAnimationFrame；；startBtnn+示Hoot，500ster，1500表格；正在播放产卵怪兽，equestAnimationFrame；；startBtn+)；(嘘)；setInterval(s)；(嘘)；setInterval(s)；(嘘)；setInterval(s)；(嘘)；setInterval(s)；(嘘)；setInterval(s)；(嘘)(Sho)；setInterval(shoot，500)；(嘘OOT，500)；setInterval(shoot，500)；(嘘OOT，500)；setInterval(shoot，500)；(嘘OOT，500)；setInterval(shoot，500)；(嘘OOT，500)；setInterval(shoot，500)；(嘘OOT，500)；setInterval(shoot，500)；(嘘O)；setInterval间隔(射击，)；(射击)；setInterval(射，='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；圣。风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；圣。风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；圣。风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.示='无'；.(产卵怪兽，1500)；)；setIn间隔(产卵怪兽，1500)；(产卵怪兽，1500)；setInterval(spawnMonster，1500)；(spawnMonster，1500)；setInterval(产卵怪兽，1500)；(spawnMonster，1500)；SE0)；(繁殖怪物，1500)；setInterval(产卵怪兽，1500)；(SpawnMonster，1500)；setInterval(spawnMonster，1500)；(SpawnMonster，1500)；setInterval(产卵怪兽，1500)；spawnMonster，1500)；Setin(spawnMonster，1500)；(spawnMonster，1500)；setInterval(产卵怪兽，1500)；(产卵怪兽，1500)；setInterval(spawnMonster，1500)；(spawnMonster，1500)；setInterval(产卵怪兽，1500)；(spawnMonster，1='分数：'+分数分数；记分板.内部文本='分数：'+分数；.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数；.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数；.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数；.内部文本='分数：'+分钟钟数；记分板.内部文本='分数：'+分数；.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数；.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数；.内部文本='分数：'+分数；记分板.内部文本='分数：'+score；.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数；.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数；.内部文本='分数：'+分数；记分板.rtext='分数：'+
+function shoot() {
+    if (!isPlaying) return;
+    var knife = document.createElement('img');
+    knife.src = 'knife.jpg';
+    knife.className = 'weapon entity';
+    var hx = parseInt(hero.style.left) || (window.innerWidth / 2 - 30);
+    knife.style.left = (hx + 20) + 'px';
+    knife.style.bottom = '80px';
+    container.appendChild(knife);
+    weapons.push({ el: knife, y: 80 });
+}
 
-)
-怪物；更新((米，指数)=>{
-米.风格.顶端=(parseInt(米.风格.顶端)+(米.classList。包含('老板')？2:5))+'px'；
-                
-                // 碰撞检测(简单判断)
-foreach./(>超文本标记语言(W，Windex)=>{武器.foreach((w，Windex)=>{
-如果(数学.防抱死制动系统(parseInt(米.风格.顶端)-parseInt(w.风格.底部))<40&&数学.防抱死制动系统(parseInt(米.风格.左)-parseInt(w.风格.左))<40){如果(数学.防抱死制动系统(parseInt(米.风格.顶端)-parseInt(w.风格.底部))<40&&数学.防抱死制动系统(parseInt(米.风格.左)-parseInt(w.风格.左))<40){.防抱死制动系统(parseInt(米.风格.顶端)-parseInt(w.风格.底部))<40&&数学.防抱死制动系统(parseInt(米.风格.左)-parseInt(w.风格.左))<40){(米.风格.左)-parseInt(w.风格.左))<40){如果(数学.防抱死制动系统(parseInt(米.风格.顶端)-parseInt(w.风格.底部))<40&&数学.防抱死制动系统(parseInt(米.风格.左)-parseInt(w.风格.左))<40){.防抱死制动系统(parseInt(米.风格.顶端)-parseInt(w.风格.底部))<40&&数学.防抱死制动系统(parseInt(米.风格.左)-parseInt(w.风格.左))<40) {
-// 爆炸特效// 爆炸特效爆炸特效// 爆炸特效爆炸特效// 爆炸特效爆炸特效// 爆炸特效
-ConstEFF=文件.createElement('img')；常数EFF=文件.createElement('img')；=文件.createElement('img')；常数EFF=文件.createElement('img')；=文件.createElement('img')；常数EFF=文件.createElement('img')；=文件.createElement('img')；常数EFF=文件.createElement('img')；
-效应src='效应。JPG'；EFF.src='效果。JPG'；EFF.src='效果.jpg'；EFF.src='效果.jpg'；.src='效果.JPG’；EFF.src='效果.jpg'；EFF.src='效果.JPG'；EFF.Src='效应。JPG’；
-EFF.className='效果实体'；eff.className='效果实体'；.className='效果实体'；eff.className='效果实体'；.className='效果实体'；eff.className='效果实体'；.className='效果实体'；eff.className='效果实体'；
-刀.风格.左=(英雄.offsetLeft+英雄.宽度/2-10)+'px'；
-EFF.风格.顶端=米.风格.顶；效风格.顶端=米.风格.顶端；.风格.顶端=米.风格.top；eff.风格.顶端=米.风格.顶端;.风格.顶端=米.风格.顶；效风格.顶端=米.风格.顶端；.风格.顶端=米.风格.top；eff.风格.顶端=米.风格.顶端;
-容器.appendChild(EFF)；容器.appendChild(EFF)；.appendChild(EFF)；容器.appendChild(EFF)；.appendChild(EFF)；容器.appendChild(EFF)；.appendChild(EFF)；容器.appendChild(EFF);
-setTimeout(()=>EFF.移除()，200)；(()=>EFF.移除()，200)；setTimeout(()=>EFF.移除()，200)；(()=>EFF.移除()，200)；setTimeout(()=>EFF.移除()，200)；(()=>EFF.移除()，200)；setTimeout(()=>EFF.移除(), 200);
+function spawnMonster() {
+    if (!isPlaying) return;
+    var isBoss = Math.random() > 0.9;
+    var m = document.createElement('img');
+    m.src = isBoss ? (Math.random() > 0.5 ? 'boss.jpg' : 'boss2.jpg') : (Math.random() > 0.5 ? 'monster.jpg' : 'monster2.jpg');
+    m.className = isBoss ? 'boss entity' : 'monster entity';
+    m.style.left = (Math.random() * (window.innerWidth - (isBoss ? 100 : 50))) + 'px';
+    m.style.top = '-100px';
+    container.appendChild(m);
+    monsters.push({ el: m, y: -100, boss: isBoss });
+}
 
-</
-标题
-w。移除()；w.移除()；删除()；.移除()；w.移除()；删除()；()；w.移除()；删除()；.移除()；w.移除()；删除();
-武器.拼接(Windex，1)；武器。拼接(Windex，1)；.拼接(Windex，1)；武器.拼接(Windex，1)；.拼接(Windex，1)；武器.拼接(Windex，1)；.拼接(Windex，1)；武器.拼接(Windex，1)；.拼接(Windex，1)；武器.拼接(Windex，1)；.拼接(Windex，1)；武器.拼接(Windex，1)；.拼接(Windex，1)；武器.拼接(Windex，1)；.拼接(Windex，1)；武器.拼接(Windex, 1);
-                        
-得分+=米.classList.conts('老板')？50:10；分数+=米.classList。包含('老板')？50:10；+=米.classList.conts('老板')？50:10；评分+=米.classList。包含('老板')？50:10；+=米.classList.conts('老板')？50:10；分数+=米.classList。包含('老板')？50:10；+=米.classList.conts('老板')？50:10；评分+=米.classList。包含('老板')？50:10；米.classList。包含('老板')？50:10；+=米.classList.conts('老板')？50:10；评分+=米.classList。包含('老板')？50:10；+=米.classList.conts('老板')？50:10；分数+=米.classList。包含('老板')？50:10；+=米.classList.conts('老板')？50:10；评分+=米.classList。包含('老板')？50:10；+=米.classList.conts('老板')？50:10；分数+=米.classList。包含('老板')？50:10；+=米.classList.conts('老板')？50:10；评分+=米.classList。包含('老板')？50:10；米.classList.包含('老板')？50:10；+=米.classList.conts('老板')？50:10；评分+=米.classList.包含('老板')? 50 : 10;
-记分板.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数；.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数;.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数；.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数;.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数；.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数;.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数；.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数;.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数；.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数;.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数；.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数;.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数；.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数;.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数；.内部文本='分数：'+分数；记分板.内部文本='分数：'+分数;
-                    }
-                });
+function update() {
+    if (!isPlaying) return;
 
-如果(parseInt(米.风格。顶端)>窗户.内部高度)如果(parseInt(米.风格。顶端)>窗户.innerHeight){(parseInt(米.风格.顶端)>窗户.内部高度){如果(parseInt(米.风格.顶端)>窗户.innerHeight){(parseInt(米.风格。顶端)>窗户.内部高度){如果(parseInt(米.风格。顶端)>窗户.innerHeight){(parseInt(米.风格.顶端)>窗户.内部高度){如果(parseInt(米.风格.顶端)>窗户.innerHeight){(parseInt(米.风格。顶端)>窗户.内部高度){如果(parseInt(米.风格。顶端)>窗户.innerHeight){(parseInt(米.风格.顶端)>窗户.内部高度){如果(parseInt(米.风格.顶端)>窗户.innerHeight){(parseInt(米.风格。顶端)>窗户.内部高度){如果(parseInt(米.风格。顶端)>窗户.innerHeight){(parseInt(米.风格.顶端)>窗户.内部高度){如果(parseInt(米.风格.顶端)>(parseInt(米.风格。顶端)>窗户.内部高度)如果(parseInt(米.风格。顶端)>窗户.innerHeight){(parseInt(米.风格.顶端)>窗户.内部高度){如果(parseInt(米.风格.顶端)>窗户.innerHeight){(parseInt(米.风格。顶端)>窗户.内部高度){如果(parseInt(米.风格。顶端)>窗户.innerHeight){(parseInt(米.风格.顶端)>窗户.内部高度){如果(parseInt(米.风格.顶端)>窗户.innerHeight){(parseInt(米.风格。顶端)>窗户.内部高度){如果(parseInt(米.风格。顶端)>窗户.innerHeight){(parseInt(米.风格.顶端)>窗户.内部高度){如果(parseInt(米.风格.顶端)>窗户.innerHeight){(parseInt(米.风格。顶端)>窗户.innerHeight){如果(parseInt(米.风格。顶端)>窗户.innerHeight){(parseInt(米.风格.顶端)>窗户.内部高度){如果(parseInt(米.风格.顶端)>窗户.innerHeight){(parseInt(米.风格。顶端)>窗户.innerHeight){(parseInt(米.风格.顶端)>窗户.内部高度){如果(parseInt(米.风格.顶端)>窗户.innerHeight){.innerHeight){(parseInt(米.风格。顶端)>窗户.innerHeight){(parseInt(米.风格.顶端)>窗户.innerHeight){如果(parseInt(米.风格.顶端)>窗户.innerHeight) {
-米.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除()；.移除()；m.移除();
-蒙塞斯.拼接(索引，1)；Monses.拼接(索引，1)；.拼接(索引，1)；怪物.拼接(指数，1)；.拼接(索引，1)；Monses.拼接(索引，1)；.拼接(索引，1)；怪物.拼接(指数，1)；)；怪物.拼接(指数，1)；.拼接(索引，1)；Monses.拼接(索引，1)；.拼接(索引，1)；怪物.拼接(指数，1)；.拼接(索引，1)；Monses.拼接(索引，1)；.拼接(索引，1)；怪物.拼接(指数，1)；)；怪物.拼接(指数，1)；.拼接(索引，1)；Monses.拼接(索引，1)；.拼接(索引，1)；怪物.拼接(指数，1)；.拼接(索引，1)；Monses.拼接(索引，1)；.拼接(索引，1)；怪物.拼接(指数，1)；)；怪物.拼接(指数，1)；.拼接(索引，1)；Monses.拼接(索引，1)；.拼接(索引，1)；怪物.拼接(指数，1)；.拼接(索引，1)；Monses.拼接(索引，1)；.拼接(索引，1)；怪物.拼接(指数，1)；)；怪物.拼接(指数，1)；.拼接(索引，1)；Monses.拼接(索引，1)；.拼接(索引，1)；怪物.拼接(指数，1)；.拼接(索引，1)；Monses.拼接(索引，1)；.拼接(索引，1)；怪物.拼接(指数，1)；)；怪物.拼接(指数，1)；.拼接(索引，1)；Monses.拼接(索引，1)；.拼接(索引，1)；怪物.拼接(指数，1)；.拼接(索引，1)；Monses.拼接(索引，1)；.拼接(索引，1)；怪物.拼接(指数，1)；)；怪物.拼接(指数，1)；.拼接(索引，1)；Monses.拼接(索引，1)；.拼接(索引，1)；怪物.拼接(指数，1)；.拼接(索引，1)；Monses.拼接(索引，1)；.拼接(索引，1)；怪物.拼接(指数，1)；)；怪物.拼接(指数，1)；.拼接(索引，1)；Monses.拼接(index，1)；.拼接(索引，1)；怪物.拼接(指数，1)；.拼接(索引，1)；Monses.拼接(index，1)；.拼接(索引，1)；怪物.拼接(指数，1)；)；怪物.拼接(指数，1)；
-                }
-分数；记分板分数；scoreboardrtextrtext；})；；})；})；;});
+    for (var i = weapons.length - 1; i >= 0; i--) {
+        weapons[i].y += 8;
+        weapons[i].el.style.bottom = weapons[i].y + 'px';
+        if (weapons[i].y > window.innerHeight) {
+            weapons[i].el.remove();
+            weapons.splice(i, 1);
+        }
+    }
 
-gameloop=(更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；=(更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=r'分数：'(更新)；=(更新)；=requestAnimationFrame(更新)；甘美=(更新)；=requestAnim=(更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；=(更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=r'分数：'(更新)；=(更新)；=requestAnimationFrame(更新)；甘美=(更新)；=requestAnimationFrameaitionFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；=(更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(mationFrame(更新)；=(更新)；=OOP=requestAnimationFrame(更新)；更新)；gameloop=re更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；=(更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(mationFrame(更新)；=(更新)；=OOP=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFramequestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；=(更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=Requesta)；=(更新)；=OOP=requestAnimationFrame(更新)；更新)；gameloop=请求动画更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloopgamelooprequestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；=(更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=Requesta)；=(更新)；=OOP=requestAnimationFrame(更新)；更新)；gameloop=帧(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)'分数：'更新)；更新)；gameloop=requestAnimationFrame(更新)；=(更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=Requesta)；=(更新)；=OOP=requestAnimationFrame(更新)；更新)；gameloop=frame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=；gameloop=requestAnimationFrame(更新)；=(更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=req(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；游戏(更新)；更新)；gameloop=requestAnimationFrame(更新)；=(更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=req(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=loop=requestAnimationFrame(更新)；=(更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=uestAnimationFrame(更新)；更新)；gameloop=请求动画)；=requestAnimationFrame(更新)；gameloop=loop=requestAnimationFrame(更新)；=(更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=uestAnimationFrame(更新)；更新)；gameloop=frame(更新)；=(更新)；=requestAnimationFrame(更新)；gameloop=requ(更新)；更新)；gameloop=requestAnimationFrame(更新)；=(更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=uestAnimationFrame(更新)；更新)；gameloop=req(更新)；=(更新)；=requestAnimationFrame(更新)；gameloop=requ(更新)；更新)；gameloop=requestAnimationFrame(更新)；=(更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=uestAnimationFrame(更新)；更新)；gameloop=uestAnimationFrame(更新)；=(更新)；=requestAnimationFrame(更新)；gameloop=estAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；(更新)；更新)；gameloop=requestAnimationFrame(更新)；=(更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=Requestan(更新)；=(更新)；=requestAnimationFrame(更新)；gameloop=estAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；(更新)；更新)；gameloop=requestAnimationFrame(更新)；=(更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=imationFrame(更新)；(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；(更新)；更新)；gameloop=requestAnimationFrame(更新)；=(更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；(更新)；(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；(更新)；更新)；gameloop=requestAnimationFrame(更新)；=(更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；requestAnimationFrame更新)；=requestAnimationFrame(更新)；gameloop=requestAnimationFrame(更新)；更新)；gameloop=requestAnimationFrame(更新)；
+    for (var j = monsters.length - 1; j >= 0; j--) {
+        monsters[j].y += monsters[j].boss ? 1.5 : 3;
+        monsters[j].el.style.top = monsters[j].y + 'px';
+
+        var mx = parseInt(monsters[j].el.style.left) || 0;
+        var my = monsters[j].y;
+
+        for (var k = weapons.length - 1; k >= 0; k--) {
+            var wx = parseInt(weapons[k].el.style.left) || 0;
+            var wy = window.innerHeight - weapons[k].y - 20;
+
+            if (Math.abs(my - wy) < 50 && Math.abs(mx - wx) < 50) {
+                var eff = document.createElement('img');
+                eff.src = 'effect.jpg';
+                eff.className = 'effect entity';
+                eff.style.left = mx + 'px';
+                eff.style.top = my + 'px';
+                container.appendChild(eff);
+                setTimeout(function(e) { return function() { e.remove(); }; }(eff), 300);
+
+                monsters[j].el.remove();
+                var wasBoss = monsters[j].boss;
+                monsters.splice(j, 1);
+                weapons[k].el.remove();
+                weapons.splice(k, 1);
+
+                score += wasBoss ? 50 : 10;
+                scoreBoard.innerText = '分数: ' + score;
+                break;
+            }
         }
 
-！doctype让超文本标记语言怪物div游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏 开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏开始游戏// 开始游戏
-startBtn.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，(；更新/超文本标记语言</超文本标记语言>超文本标记语言>/超文本标记语.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，(；更新/超文本标记语言</超文本标记语言>超文本标记语言>/超文本标记语.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，(；更新/超文本标记语言</超文本标记语言>超文本标记语言>/超文本标记语.addEvenaddEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，(；更新/超文本标记语言</超文本标记语言>超文本标记语言>/超文本标记语.tListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，(；更新/超文本标记语言</超文本标记语言>超文本标记语言>/言>超文本标记语言>/超文本addEvent('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，(；更新/超文本标记语言</超文本标记语言>超文本标记语言>/言>超文本标记语言>/听者('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.astartBtn('单击'，()=>{addEventListener('单击'，(；更新/超文本标记语言</超文本标记语言>超文本标记语言>/言>超文本标记语言>/标记语言>超文本标记语言('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventL.astartBtn('单击'，()=>{addEventListener('单击'，(；更新/超文本标记语言</超文本标记语言>超文本标记语言>/言>超文本标记语言>/标记语言>超文本标记语言('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{addEventListener('单击'，()=>{startBtn.addEventListener('单击'，()=>{.addEventListener('单击'，()=>{startBtn.istener('单击'，()=>{addEventListener('单击'，(；更新/超文本标记语言</超文本标记语言>超文本标记语言>/言>超文本标记语言>/标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>=>{startBtn.addEventListener('单击'，()=>{武器'点击'，()=>{startBtnaddEventListener('单击'，()=>{>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>=>{startBtn.addEventListener('单击'，()=>{武器'点击'，()=>{startBtnaddEventListener('单击'，()=>{>超文本标记语言>/超文本标记语言>超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言('单击'，()=>{addEventListener('单击'，(；更新/超文本标记语言</超文本标记语言>超文本标记语言>/言>超文本标记语言>/标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>=>{startBtn.addEventListener('单击'，()=>{武器'点击'，()=>{startBtnaddEventListener('单击'，()=>{>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>=>{startBtn.addEventListener('单击'，()=>{武器'点击'，()=>{startBtnaddEventListener('单击'，()=>{>超文本标记语言>/超文本标记语言>超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>=>{startBtn.addEventListener('单击'，()=>{武器'点击'，()=>{startBtnaddEventListener(超文本标记语言>超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>=>{startBtn.addEventListener('单击'，()=>{武器'点击'，()=>{startBtnaddEventListener('单击'，()=>{>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>=>{startBtn.addEventListener('单击'，()=>{武器'点击'，()=>{startBtnaddEventListener('单击'，()=>{>超文本标记语言>/超文本标记语言>超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>=>{startBtn.addEventListener('单击'，()=>{武器'点击'，()=>{startBtnaddEventListener(超文本标记语言>超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>=>{startBtn.addEventListener('单击'，()=>{武器'点击'，()=>{startBtnaddEventListener('单击'，()=>{>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>=>{startBtn.addEventListener('单击'，()=>{武器'点击'，()=>{startBtnaddEventListener('单击'，()=>{>超文本标记语言>/超文本标记语言>超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>=>{startBtn.addEventListener('单击'，()=>{武器'点击'，()=>{'单击'，()=>{>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>=>{startBtn.addEventListener('单击'，()=>{武器'点击'，()=>{startBtnaddEventListener('单击'，()=>{('单击'，()=>{>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>=>{startBtn.addEventListener('单击'，()=>{武器'点击'，()=>{startBtnaddEventListener('单击'，()=>{>超文本标记语言>=>{startBtn.addEventListener('单击'，()=>{武器'点击'，()=>{'单击'，()=>{>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>=>{startBtn.addEventListener('单击'，()=>{武器'点击'，()=>{startBtnaddEventListener('单击'，()=>{('单击'，()=>{>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>/超文本标记语言>超文本标记语言>=>{startBtn.addEventListener('单击'，()=>{武器'点击'，()=>{startBtnaddEventListener('单击'，()=>{
-IsPlaying=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=正确;=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=TR==true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=正确;=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=TR==true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=正确;=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=TR===true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=正确;=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=TR=英=Tru=true；=true；IsPlaying=true；=true；IsPlaying=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=正确;=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=TR=阿英=e；=true；IsPlaying=true；=true；IsPlaying=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=正确;=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=ue；=true；ISP=true；=Tru=true；ISP=true；IsPlaying=true；=true；IsPlaying=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=正确;=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=true；=true；IsPlaying=ue；=true；ISP=true；=Tru=铺设
-正确；startBtn风格。显风格。显示风格。显示风格。显示风格。显示='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.。显示='无'；startBtn.示='无'；.'无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；星='无'；startBtn.示='无'；.'无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示=TBTN.示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；开始；startBtn.示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示=BTN.风格。显示=='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显正确；startBtn风格。显风格。显示风格。显示风格。显示风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；.风格。显示='无'；startBtn.风格。显示='无'；.风格.显示='无'；startBtn.风格.显示='无'；='无'；.风格。显示='无'；startBtn.风格。显示='无'；。风格。显示=；startBtn
-setInterval；startBtn；startBtn；startBtn
-武器.foreach((w，指数)=>{
-spaw风格
-射击setInterval500射击，500次射击射击，500分数；记分板setInterval
-更新()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()； ()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；；更新()；()；更新()；()； 更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新() ； ()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()； 更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；；更新()；()；更新()；()；更新()； ()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新() ；() ； 更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()； ()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；；更新()；()；更新()；()； 更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新() ； ()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()； 更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；；更新()；()；更新()；()；更新()； ()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新() ；() ；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；()；更新()；()；更新()；()； 更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；() ；更新()；()；更新()；()； 更新() ；()；更新()；()；更新()；()；更新()；()；更新()；；更新()；()；更新()；()；更新() ；()；更新()；()；更新() ； ()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新() ；() ；更新()；()；更新()； ()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新() ；()；更新()；() ； 更新() ；()；更新()；()；更新()；()；更新()；()；更新()；；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()更新()；() ； ；()；更新()；()；更新()；；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()； 更新()；()；更新()；()；更新()；()；更新()；()；更新() ；()；更新()；()；更新()；()；更新()；()；更新()；()； 更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新() ； ()；更新() ；()；更新()；；更新()；()；更新() ；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()； 更新()；()；更新()；()；更新()；()；更新()；()；更新() ；()；更新()；()；更新()；()；更新()；()；更新()；()； 更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新() ； ()；更新() ；()；更新()；；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()； 更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新() ；()；更新()；()；更新()；()； 更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新() ； ()；更新()；()；更新()；()；更新() ；()；更新()；；更新()；()；更新() ；()；更新()；()；更新()；()；更新()；()； 更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新() ； ()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；() ；更新()；()；更新()；()；更新()；() ； 更新()；()；更新()；()；更新() ；；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；() ； 更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新() ； ；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()； 更新()；()；更新()；()；更新()；)；更新()；；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()； ()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()； 更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；() ；更新()；()；更新()；()；更新()；()； 更新()；()；更新()；()；更新()；()；更新()；；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；()；更新()；
-        
-<
-<
-<
+        if (monsters[j] && monsters[j].y > window.innerHeight + 100) {
+            monsters[j].el.remove();
+            monsters.splice(j, 1);
+        }
+    }
+
+    animId = requestAnimationFrame(update);
+}
+
+startBtn.addEventListener('click', function() {
+    isPlaying = true;
+    startBtn.style.display = 'none';
+    score = 0;
+    scoreBoard.innerText = '分数: ' + score;
+    shootTimer = setInterval(shoot, 500);
+    spawnTimer = setInterval(spawnMonster, 1500);
+    update();
+});
+</script>
+</body>
+</html>
