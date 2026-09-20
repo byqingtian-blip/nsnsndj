@@ -1,373 +1,188 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>旋转飞刀割草 · 完整版</title>
+<title>商业级旋转飞刀割草</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a14; }
-  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; touch-action: none; user-select: none; }
-  #stage { position: fixed; inset: 0; background: url('bg.jpg') center/cover no-repeat; overflow: hidden; }
-  #stage.shake { animation: shake .35s cubic-bezier(.36,.07,.19,.97) both; }
-  @keyframes shake {
-    10%,90% { transform: translate3d(-2px, 1px, 0); }
-    20%,80% { transform: translate3d(3px, -2px, 0); }
-    30%,50%,70% { transform: translate3d(-4px, 2px, 0); }
-    40%,60% { transform: translate3d(4px, -1px, 0); }
-  }
-  #world { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-  .sprite { position: absolute; will-change: transform; }
-  .sprite img { width: 100%; height: 100%; display: block; pointer-events: none; }
-  #hud { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
-  .hud-top { position: absolute; top: env(safe-area-inset-top, 12px); left: 12px; right: 12px; display: flex; align-items: flex-start; gap: 10px; }
-  #hpWrap { flex: 1; max-width: 220px; }
-  #hpBar { height: 16px; border-radius: 8px; background: rgba(0,0,0,.45); border: 2px solid rgba(255,255,255,.7); overflow: hidden; }
-  #hpFill { height: 100%; width: 100%; background: linear-gradient(90deg,#ff4d4d,#ff9d3a); transition: width .2s; }
-  #hpText { font-size: 11px; color: #fff; text-shadow: 1px 1px 2px #000; margin-top: 2px; }
-  #stats { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: 1; }
-  .stat { background: rgba(0,0,0,.4); color: #fff; padding: 3px 10px; border-radius: 12px; font-size: 14px; font-weight: 700; text-shadow: 1px 1px 2px #000; line-height: 1.4; }
-  .stat b { color: #ffe14d; }
-  #combo.show { animation: pop .3s; }
-  @keyframes pop { 0%{transform:scale(.5)} 60%{transform:scale(1.25)} 100%{transform:scale(1)} }
-  #bossBar { display: none; margin-top: 8px; }
-  #bossBar.show { display: block; }
-  #bossBar .name { color: #ff5050; font-size: 13px; font-weight: 800; text-shadow: 1px 1px 2px #000; margin-bottom: 2px; text-align:center; }
-  #bossBar .track { height: 14px; border-radius: 7px; background: rgba(0,0,0,.5); border: 2px solid #ff5050; overflow: hidden; }
-  #bossBar .fill { height: 100%; width: 100%; background: linear-gradient(90deg,#ff5050,#ff9d3a); transition: width .15s; }
-  .float { position: absolute; font-weight: 800; pointer-events: none; animation: floatUp 1s ease-out forwards; text-shadow: 1px 1px 2px #000; }
-  @keyframes floatUp { 0%{opacity:1; transform:translateY(0) scale(1)} 100%{opacity:0; transform:translateY(-60px) scale(1.6)} }
-  #flash { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 90; transition: opacity .3s; }
-  .panel { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: radial-gradient(circle at center, rgba(20,10,40,.78), rgba(0,0,0,.92)); pointer-events: auto; padding: 24px; text-align: center; }
-  .panel.hidden { display: none; }
-  .title { color: #fff; }
-  .title h1 { font-size: 34px; letter-spacing: 2px; text-shadow: 0 0 18px #b066ff, 0 4px 8px #000; }
-  .title .sub { font-size: 14px; color: #d7c2ff; margin-top: 6px; letter-spacing: 4px; }
-  .btn { pointer-events: auto; cursor: pointer; border: none; color: #fff; font-weight: 800; font-size: 20px; padding: 14px 42px; border-radius: 14px; letter-spacing: 2px; background: linear-gradient(135deg,#ff5e3a,#ff2a68); box-shadow: 0 6px 0 #b01c45, 0 10px 24px rgba(255,42,104,.5); transition: transform .08s, box-shadow .08s; }
-  .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #b01c45, 0 4px 10px rgba(255,42,104,.5); }
-  .btn.ghost { background: linear-gradient(135deg,#6a5cff,#9d4dff); box-shadow: 0 6px 0 #3d2faa, 0 10px 24px rgba(106,92,255,.5); font-size: 15px; padding: 10px 24px; }
-  .tip { color: #b9b0d6; font-size: 13px; line-height: 1.9; max-width: 320px; }
-  .tip b { color: #fff; }
-  .gameover .statLine { color: #fff; font-size: 18px; margin: 4px 0; }
-  .gameover .statLine b { color: #ffe14d; }
+  body { margin: 0; padding: 0; background: #000; overflow: hidden; touch-action: none; font-family: sans-serif; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+  #ui { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 10; color: #fff; text-shadow: 2px 2px 4px #000; font-size: 18px; display: flex; justify-content: space-between; pointer-events: none; }
+  #bossBar { position: absolute; top: 60px; left: 10%; width: 80%; height: 15px; background: rgba(0,0,0,0.5); border: 2px solid #fff; border-radius: 10px; z-index: 10; display: none; overflow: hidden; }
+  #bossHp { height: 100%; background: #f00; width: 100%; transition: width 0.2s; }
+  .panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 20; text-align: center; background: rgba(0,0,0,0.85); padding: 30px; border-radius: 15px; color: #fff; }
+  button { padding: 15px 40px; font-size: 22px; background: #ff4400; color: #fff; border: none; border-radius: 10px; margin-top: 20px; pointer-events: auto; }
 </style>
 </head>
 <body>
-<div id="stage"><div id="world"></div><div id="flash"></div></div>
-<div id="hud">
-  <div class="hud-top">
-    <div id="hpWrap">
-      <div id="hpBar"><div id="hpFill"></div></div>
-      <div id="hpText">HP 5 / 5</div>
-      <div id="bossBar"><div class="name">魔王 · 暗影之王</div><div class="track"><div class="fill"></div></div></div>
-    </div>
-    <div id="stats">
-      <div class="stat">分数 <b id="hudScore">0</b></div>
-      <div class="stat">时间 <b id="hudTime">0:00</b></div>
-      <div class="stat" id="combo">连击 <b>0</b></div>
-    </div>
-  </div>
+<div id="ui">
+  <div>HP:<span id="hp">5</span> | 分数:<span id="score">0</span></div>
+  <div>连击:<span id="combo">0</span><br>时间:<span id="time">0:00</span></div>
 </div>
-<div class="panel" id="startPanel">
-  <div class="title"><h1>旋转飞刀割草</h1><div class="sub">SPINNING KNIFE SURVIVAL</div></div>
-  <div class="tip">手指在屏幕上<b>左右滑动</b>移动主角<br>飞刀会自动环绕旋转，碰到怪物即造成切割<br>存活越久、连击越高，分数越多<br>每 <b>30 秒</b> 触发一次 Boss 战</div>
-  <button class="btn" id="startBtn">开始割草</button>
-  <button class="btn ghost" id="muteBtn">🔊 音效：开</button>
-</div>
-<div class="panel hidden" id="pausePanel">
-  <div class="title"><h1>已暂停</h1></div>
-  <button class="btn" id="resumeBtn">继续</button>
-  <button class="btn ghost" id="restartBtn">重新开始</button>
-</div>
-<div class="panel hidden gameover" id="overPanel">
-  <div class="title"><h1 id="overTitle">游戏结束</h1></div>
-  <div class="statLine">本局分数 <b id="overScore">0</b></div>
-  <div class="statLine">最高连击 <b id="overCombo">0</b></div>
-  <div class="statLine">存活时间 <b id="overTime">0:00</b></div>
-  <button class="btn" id="againBtn">再来一局</button>
-</div>
+<div id="bossBar"><div id="bossHp"></div></div>
+<canvas id="game"></canvas>
+<div id="startPanel" class="panel"><h1>旋转飞刀割草</h1><button id="startBtn">开始游戏</button></div>
+<div id="overPanel" class="panel" style="display:none"><h1>游戏结束</h1><p>分数: <span id="finalScore">0</span></p><button id="restartBtn">重新开始</button></div>
+
 <script>
-(function () {
-  'use strict';
-  var $ = function(id){return document.getElementById(id);};
-  var rand = function(a,b){return a+Math.random()*(b-a);};
-  var irand = function(a,b){return Math.floor(rand(a,b+1));};
-  var clamp = function(v,a,b){return Math.max(a,Math.min(b,v));};
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const uiHp = document.getElementById('hp'), uiScore = document.getElementById('score'), uiCombo = document.getElementById('combo'), uiTime = document.getElementById('time');
+const bossBar = document.getElementById('bossBar'), bossHpBar = document.getElementById('bossHp');
+const startPanel = document.getElementById('startPanel'), overPanel = document.getElementById('overPanel');
 
-  var AC=null, muted=false, masterGain=null;
-  function audioCtx(){
-    if(!AC){ var C=window.AudioContext||window.webkitAudioContext; if(C){ AC=new C(); masterGain=AC.createGain(); masterGain.gain.value=0.5; masterGain.connect(AC.destination); } }
-    return AC;
-  }
-  function unlockAudio(){ var ctx=audioCtx(); if(ctx&&ctx.state==='suspended') ctx.resume(); }
-  function playTone(freq,dur,type,vol,slide){
-    if(muted) return; var ctx=audioCtx(); if(!ctx) return;
-    var o=ctx.createOscillator(), g=ctx.createGain();
-    o.type=type||'sine'; o.frequency.value=freq;
-    if(slide) o.frequency.exponentialRampToValueAtTime(slide,ctx.currentTime+dur);
-    g.gain.value=0; g.gain.linearRampToValueAtTime(vol||0.3,ctx.currentTime+0.01);
-    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+dur);
-    o.connect(g); g.connect(masterGain); o.start(); o.stop(ctx.currentTime+dur);
-  }
-  var SFX = {
-    hit:   function(){playTone(220,0.12,'sawtooth',0.25,90);},
-    kill:  function(){playTone(520,0.1,'square',0.2,780); setTimeout(function(){playTone(780,0.12,'square',0.18,1040);},50);},
-    hurt:  function(){playTone(140,0.25,'sawtooth',0.4,60);},
-    level: function(){[523,659,784,1046].forEach(function(f,i){setTimeout(function(){playTone(f,0.15,'triangle',0.25);},i*90);});},
-    boss:  function(){[80,100,75,110].forEach(function(f,i){setTimeout(function(){playTone(f,0.3,'sawtooth',0.4);},i*160);});},
-    over:  function(){[400,320,240,160].forEach(function(f,i){setTimeout(function(){playTone(f,0.35,'sine',0.3);},i*200);});},
-  };
-  var bgmTimer=null, bgmStep=0;
-  function startBGM(){
-    if(bgmTimer||muted) return;
-    var notes=[261,329,392,523,392,329];
-    bgmTimer=setInterval(function(){
-      if(muted) return; var ctx=audioCtx(); if(!ctx) return;
-      var f=notes[bgmStep%notes.length];
-      playTone(f,0.3,'triangle',0.06);
-      if(bgmStep%4===0) playTone(f/2,0.4,'sine',0.08);
-      bgmStep++;
-    },320);
-  }
-  function stopBGM(){ if(bgmTimer){clearInterval(bgmTimer);bgmTimer=null;} }
+let W, H;
+function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+window.addEventListener('resize', resize); resize();
 
-  var CFG={ HERO_SPEED:7.5, KNIFE_RADIUS:52, KNIFE_COUNT:3, HERO_HP:5, SPAWN_BASE:900, SPAWN_MIN:320, BOSS_SCORE:200, COMBO_TIMEOUT:2500, BOSS_INTERVAL:30000 };
-  var MONSTERS={
-    slime:{img:'monster.jpg', w:46, hp:1, spd:1.3, score:10},
-    bat:  {img:'monster2.jpg',w:40, hp:1, spd:2.4, score:15},
-    brute:{img:'boss2.jpg',   w:64, hp:5, spd:0.9, score:40},
-  };
+const imgs = {};
+['bg','hero','knife','monster','monster2','boss','boss2','effect'].forEach(k=>{
+  imgs[k] = new Image(); imgs[k].src = k+'.jpg';
+  imgs[k].onload = ()=> removeWhite(imgs[k]);
+});
 
-  var stage=$('stage'), world=$('world');
-  var stageW=function(){return window.innerWidth;}, stageH=function(){return window.innerHeight;};
-  var running=false, paused=false, rafId=0, lastT=0;
-  var elapsed=0, lastBossAt=0;
-  var hero, knives=[], enemies=[], effects=[];
-  var score=0, combo=0, maxCombo=0, comboTimer=0;
-  var hp=CFG.HERO_HP, maxHp=CFG.HERO_HP;
-  var knifeCount=CFG.KNIFE_COUNT, killCount=0, knifeRadius=CFG.KNIFE_RADIUS;
-  var boss=null, spawnTimer=0, spawnInterval=CFG.SPAWN_BASE;
+function removeWhite(img) {
+  try {
+    const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+    const cx = c.getContext('2d'); cx.drawImage(img, 0, 0);
+    const d = cx.getImageData(0,0,c.width,c.height);
+    for(let i=0;i<d.data.length;i+=4) {
+      if(d.data[i]>240 && d.data[i+1]>240 && d.data[i+2]>240) d.data[i+3]=0;
+    }
+    cx.putImageData(d,0,0); img.src = c.toDataURL();
+  } catch(e) {}
+}
 
-  var pool=[];
-  function getSprite(){
-    var el=pool.pop();
-    if(!el){ el=document.createElement('div'); el.className='sprite'; el.innerHTML='<img alt="">'; }
-    return el;
+let state = { running:false, hp:5, score:0, combo:0, time:0, knives:[], enemies:[], particles:[], bgY:0, hero:{x:0,y:0}, boss:null, lastSpawn:0 };
+
+function reset() {
+  state = { running:true, hp:5, score:0, combo:0, time:0, knives:[], enemies:[], particles:[], bgY:0, hero:{x:W/2,y:H-80}, boss:null, lastSpawn:0 };
+  uiHp.textContent = state.hp; uiScore.textContent = state.score; uiCombo.textContent = state.combo;
+  bossBar.style.display = 'none'; startPanel.style.display = 'none'; overPanel.style.display = 'none';
+  for(let i=0;i<3;i++) state.knives.push({angle:i*(Math.PI*2/3), r:45});
+}
+
+function spawnEnemy() {
+  const isBoss = state.time > 30 && Math.random() < 0.05 && !state.boss;
+  const x = Math.random()*(W-60)+30;
+  if(isBoss) {
+    state.boss = {x:W/2, y:-100, hp:500, maxHp:500, type:Math.random()>0.5?2:1};
+    bossBar.style.display = 'block'; bossHpBar.style.width = '100%';
+  } else {
+    state.enemies.push({x, y:-50, hp:1, type:Math.random()>0.5?2:1});
   }
-  function setSprite(el,src,w,h){ el.style.width=w+'px'; el.style.height=(h||w)+'px'; el.firstChild.src=src; }
-  function setPos(el,x,y){ el.style.transform='translate3d('+Math.round(x)+'px,'+Math.round(y)+'px,0)'; }
+}
 
-  function createHero(){
-    var el=getSprite(); setSprite(el,'hero.jpg',64,64); world.appendChild(el);
-    return {el:el, x:stageW()/2-32, y:stageH()-100, w:64, h:64, targetX:stageW()/2-32, invuln:0};
+function explode(x, y) {
+  for(let i=0;i<8;i++) state.particles.push({x, y, vx:(Math.random()-0.5)*5, vy:(Math.random()-0.5)*5, life:20});
+}
+
+function update(dt) {
+  if(!state.running) return;
+  state.time += dt/1000; uiTime.textContent = Math.floor(state.time/60)+':'+String(Math.floor(state.time%60)).padStart(2,'0');
+  
+  state.bgY = (state.bgY + dt*0.1) % H;
+  
+  if(state.hero.targetX !== undefined) {
+    state.hero.x += (state.hero.targetX - state.hero.x) * 0.2;
+    state.hero.y += (state.hero.targetY - state.hero.y) * 0.2;
   }
-  function createKnives(){
-    for(var i=0;i<knifeCount;i++){
-      var el=getSprite(); setSprite(el,'knife.jpg',34,34); world.appendChild(el);
-      knives.push({el:el, angle:(i/knifeCount)*Math.PI*2, radius:knifeRadius, speed:0.06});
+  
+  state.knives.forEach(k=> k.angle += dt*0.005);
+  
+  if(Date.now() - state.lastSpawn > 800) { spawnEnemy(); state.lastSpawn = Date.now(); }
+  
+  state.enemies.forEach(e=> e.y += dt*0.1);
+  state.enemies = state.enemies.filter(e=> e.y < H+50);
+  
+  if(state.boss) {
+    state.boss.y += dt*0.03;
+    if(Math.abs(state.boss.x - state.hero.x) < 60 && Math.abs(state.boss.y - state.hero.y) < 60) {
+      state.hp--; uiHp.textContent = state.hp; state.boss.x += 100;
+      if(state.hp<=0) gameOver();
     }
   }
-  function rebuildKnives(){
-    knives.forEach(function(k){world.removeChild(k.el);pool.push(k.el);}); knives=[];
-    createKnives(); flashScreen(); SFX.level();
-  }
-  function spawnEnemy(){
-    var elapsedSec=elapsed/1000, type, r=Math.random();
-    if(r<0.55) type='slime'; else if(r<0.85) type='bat'; else type='brute';
-    var def=MONSTERS[type]; var el=getSprite(); setSprite(el,def.img,def.w,def.w); world.appendChild(el);
-    var x=rand(10,stageW()-def.w-10);
-    var spd=def.spd*(1+elapsedSec/120);
-    enemies.push({el:el,x:x,y:-def.w,w:def.w,h:def.w,type:type,hp:def.hp,maxHp:def.hp,spd:spd,def:def,hitCd:0});
-  }
-  function spawnBoss(){
-    if(boss) return;
-    SFX.boss();
-    var el=getSprite(); setSprite(el,'boss.jpg',120,120); world.appendChild(el);
-    boss={el:el, x:stageW()/2-60, y:-140, w:120, h:120, hp:CFG.BOSS_HP+Math.floor(elapsed/1000/30)*8, maxHp:0, spd:1.1, dir:1, t:0, hitCd:0, isBoss:true};
-    boss.maxHp=boss.hp;
-    $('bossBar').classList.add('show'); flashScreen();
-    enemies.forEach(function(e){e.el.remove();}); enemies=[];
-  }
-  function spawnEffect(x,y,big){
-    var el=getSprite(); setSprite(el,'effect.jpg',big?80:46,big?80:46); setPos(el,x,y); world.appendChild(el);
-    var life=big?28:16; effects.push({el:el,x:x,y:y,life:life,max:life,big:big});
-  }
-  function floatText(x,y,text,color){
-    var el=document.createElement('div'); el.className='float'; el.textContent=text;
-    el.style.left=x+'px'; el.style.top=y+'px'; el.style.color=color||'#fff';
-    el.style.fontSize=(color==='#ffe14d'?22:16)+'px'; stage.appendChild(el);
-    setTimeout(function(){el.remove();},1000);
-  }
-  function flashScreen(){ var f=$('flash'); f.style.opacity='0.6'; setTimeout(function(){f.style.opacity='0';},50); }
-  function shake(){ stage.classList.remove('shake'); void stage.offsetWidth; stage.classList.add('shake'); }
-
-  function checkHit(ex,ey,ew){
-    for(var i=0;i<knives.length;i++){
-      var k=knives[i];
-      var kx=hero.x+hero.w/2+Math.cos(k.angle)*k.radius-17;
-      var ky=hero.y+hero.h/2+Math.sin(k.angle)*k.radius-17;
-      var r=ew/2+17;
-      var dx=(kx+17)-(ex+ew/2), dy=(ky+17)-(ey+ew/2);
-      if(dx*dx+dy*dy<r*r) return {hit:true,kx:kx,ky:ky};
-    }
-    return {hit:false};
-  }
-  function applyUpgrade(){
-    killCount++;
-    if(killCount%20===0){ knifeCount=Math.min(knifeCount+1,8); rebuildKnives(); floatText(hero.x,hero.y-20,'+1 飞刀','#7cffb2'); }
-    else if(killCount%12===0){ knifeRadius=Math.min(knifeRadius+8,110); knives.forEach(function(k){k.radius=knifeRadius;}); floatText(hero.x,hero.y-20,'范围↑','#7cffb2'); }
-    else if(killCount%8===0){ maxHp=Math.min(maxHp+1,12); hp=Math.min(hp+1,maxHp); $('hpFill').style.width=(hp/maxHp*100)+'%'; floatText(hero.x,hero.y-20,'+1 HP','#ff8a8a'); }
-  }
-
-  function pointerMove(px){
-    if(!running||paused) return;
-    hero.targetX=clamp(px-hero.w/2,0,stageW()-hero.w);
-  }
-  stage.addEventListener('touchmove',function(e){e.preventDefault();pointerMove(e.changedTouches[0].clientX);},{passive:false});
-  stage.addEventListener('touchstart',function(e){pointerMove(e.changedTouches[0].clientX);},{passive:false});
-  stage.addEventListener('mousemove',function(e){pointerMove(e.clientX);});
-  document.addEventListener('keydown',function(e){if(e.key==='p'||e.key==='P'||e.key==='Escape') togglePause();});
-
-  function update(dt){
-    var dts=dt/16.6667;
-    hero.x+=(hero.targetX-hero.x)*Math.min(CFG.HERO_SPEED*dts*0.1,1);
-    hero.x=clamp(hero.x,0,stageW()-hero.w);
-    if(hero.invuln>0) hero.invuln-=dt;
-    setPos(hero.el,hero.x,hero.y);
-    hero.el.style.opacity=(hero.invuln>0&&Math.floor(performance.now()/80)%2?0.35:1);
-
-    for(var i=0;i<knives.length;i++){
-      var k=knives[i]; k.angle+=k.speed*dts;
-      var kx=hero.x+hero.w/2+Math.cos(k.angle)*k.radius-17;
-      var ky=hero.y+hero.h/2+Math.sin(k.angle)*k.radius-17;
-      setPos(k.el,kx,ky);
-      k.el.style.transform+=' rotate('+(k.angle*180/Math.PI+90)+'deg)';
-    }
-
-    spawnTimer-=dt;
-    if(spawnTimer<=0&&!boss){ spawnEnemy(); spawnTimer=spawnInterval; spawnInterval=Math.max(CFG.SPAWN_MIN,spawnInterval-8); }
-    if(!boss&&elapsed-lastBossAt>=CFG.BOSS_INTERVAL){ lastBossAt=elapsed; spawnBoss(); }
-
-    var allEnemies=boss?[boss]:enemies;
-    for(var j=allEnemies.length-1;j>=0;j--){
-      var e=allEnemies[j]; e.hitCd=Math.max(0,e.hitCd-dt);
-      if(boss){ e.t+=dt; e.x+=e.dir*e.spd*dts*1.6; if(e.x<10){e.x=10;e.dir=1;} if(e.x>stageW()-e.w-10){e.x=stageW()-e.w-10;e.dir=-1;} if(e.t>3000&&e.y<140) e.y+=e.spd*dts*0.6; setPos(e.el,e.x,e.y); $('bossBar').querySelector('.fill').style.width=(e.hp/e.maxHp*100)+'%'; }
-      else { e.y+=e.spd*dts; setPos(e.el,e.x,e.y); }
-
-      var h=checkHit(e.x,e.y,e.w);
-      if(h.hit&&e.hitCd<=0){
-        e.hitCd=120; e.hp--;
-        SFX.hit(); spawnEffect(h.kx,h.ky,false);
-        if(e.hp<=0){
-          var isBoss=!!e.isBoss;
-          if(isBoss){
-            score+=CFG.BOSS_SCORE; spawnEffect(e.x,e.y,true); shake(); flashScreen();
-            $('bossBar').classList.remove('show'); floatText(e.x,e.y-20,'BOSS 击败!','#ffe14d'); SFX.kill();
-            hp=Math.min(hp+2,maxHp); $('hpFill').style.width=(hp/maxHp*100)+'%';
-            maxHp=Math.min(maxHp+2,12); $('hpText').textContent='HP '+hp+' / '+maxHp;
-          } else {
-            score+=e.def.score; combo++; if(combo>maxCombo)maxCombo=combo; comboTimer=CFG.COMBO_TIMEOUT;
-            spawnEffect(e.x,e.y,false);
-            if(combo>0&&combo%5===0){SFX.kill();floatText(e.x,e.y-16,combo+' 连击!','#ffe14d');} else SFX.kill();
-            applyUpgrade();
-          }
-          e.el.remove();
-          if(isBoss) boss=null; else allEnemies.splice(j,1);
-          $('hudScore').textContent=score; continue;
-        }
+  
+  state.knives.forEach(k=>{
+    const kx = state.hero.x + Math.cos(k.angle)*k.r;
+    const ky = state.hero.y + Math.sin(k.angle)*k.r;
+    state.enemies.forEach(e=>{
+      if(Math.abs(kx-e.x)<40 && Math.abs(ky-e.y)<40) {
+        e.hp--; explode(e.x, e.y);
+        if(e.hp<=0) { state.score+=10; state.combo++; uiScore.textContent=state.score; uiCombo.textContent=state.combo; }
       }
-
-      if(!e.isBoss){
-        var eHitR=e.w/2+hero.w/2-14;
-        var cdx=(e.x+e.w/2)-(hero.x+hero.w/2), cdy=(e.y+e.h/2)-(hero.y+hero.h/2);
-        if(e.hitCd<=0&&(cdx*cdx+cdy*cdy)<eHitR*eHitR){
-          if(hero.invuln<=0){ hp--; hero.invuln=1200; combo=0; comboTimer=0; SFX.hurt(); shake(); flashScreen(); $('hpFill').style.width=Math.max(0,hp/maxHp*100)+'%'; $('hpText').textContent='HP '+Math.max(0,hp)+' / '+maxHp; if(hp<=0){gameOver();return;} }
-        }
-      }
-      if(!e.isBoss&&e.y>stageH()+60){ e.el.remove(); allEnemies.splice(j,1); }
+    });
+    if(state.boss && Math.abs(kx-state.boss.x)<70 && Math.abs(ky-state.boss.y)<70) {
+      state.boss.hp-=5; explode(state.boss.x, state.boss.y);
+      if(state.boss.hp<=0) { state.score+=100; state.combo++; uiScore.textContent=state.score; state.boss=null; bossBar.style.display='none'; }
+      else bossHpBar.style.width = (state.boss.hp/state.boss.maxHp*100)+'%';
     }
-
-    for(var m=effects.length-1;m>=0;m--){
-      var ef=effects[m]; ef.life--; ef.el.style.opacity=ef.life/ef.max;
-      ef.el.style.transform=ef.el.style.transform.replace(/scale\([^)]*\)/,'')+' scale('+(ef.big?1.6:1.3)+')';
-      if(ef.life<=0){ef.el.remove();effects.splice(m,1);}
-    }
-
-    if(combo>0){
-      comboTimer-=dt; var cb=$('combo'); cb.querySelector('b').textContent=combo; cb.classList.add('show');
-      if(comboTimer<=0){combo=0;cb.classList.remove('show');}
-    }
-  }
-
-  function fmtTime(ms){ var s=Math.floor(ms/1000); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
-
-  function loop(now){
-    if(!running) return;
-    if(paused){rafId=requestAnimationFrame(loop);return;}
-    var dt=Math.min(now-lastT,50); lastT=now; elapsed+=dt;
-    if(Math.floor(elapsed/1000)>Math.floor((elapsed-dt)/1000)) $('hudTime').textContent=fmtTime(elapsed);
-    update(dt); rafId=requestAnimationFrame(loop);
-  }
-
-  function clearWorld(){
-    knives.forEach(function(k){k.el.remove();});
-    enemies.forEach(function(e){e.el.remove();});
-    effects.forEach(function(e){e.el.remove();});
-    if(hero&&hero.el) hero.el.remove();
-    knives=[];enemies=[];effects=[];
-    if(boss){boss.el.remove();boss=null;} $('bossBar').classList.remove('show');
-  }
-
-  function startGame(){
-    unlockAudio(); clearWorld();
-    score=0;combo=0;maxCombo=0;elapsed=0;killCount=0;
-    knifeCount=CFG.KNIFE_COUNT;knifeRadius=CFG.KNIFE_RADIUS;
-    spawnInterval=CFG.SPAWN_BASE;spawnTimer=800;lastBossAt=0;
-    maxHp=CFG.HERO_HP;hp=maxHp;
-    $('hpFill').style.width='100%'; $('hpText').textContent='HP '+hp+' / '+maxHp;
-    $('combo').classList.remove('show'); $('hudScore').textContent=0; $('hudTime').textContent='0:00';
-    hero=createHero(); createKnives();
-    running=true;paused=false; hideAllPanels();
-    lastT=performance.now(); rafId=requestAnimationFrame(loop); startBGM();
-  }
-
-  function gameOver(){
-    running=false; cancelAnimationFrame(rafId); stopBGM(); SFX.over();
-    $('overScore').textContent=score; $('overCombo').textContent=maxCombo; $('overTime').textContent=fmtTime(elapsed);
-    $('overPanel').classList.remove('hidden');
-  }
-
-  function togglePause(){
-    if(!running) return;
-    paused=!paused; $('pausePanel').classList.toggle('hidden',!paused);
-    if(paused) stopBGM(); else {lastT=performance.now();startBGM();}
-  }
-
-  function hideAllPanels(){ ['startPanel','pausePanel','overPanel'].forEach(function(id){$(id).classList.add('hidden');}); }
-
-  $('startBtn').addEventListener('click',startGame);
-  $('againBtn').addEventListener('click',startGame);
-  $('resumeBtn').addEventListener('click',togglePause);
-  $('restartBtn').addEventListener('click',startGame);
-  $('muteBtn').addEventListener('click',function(){
-    muted=!muted; $('muteBtn').textContent=muted?'🔇 音效：关':'🔊 音效：开';
-    if(muted) stopBGM(); else if(running) startBGM();
   });
-  $('hud').addEventListener('click',function(e){
-    if(e.target.classList.contains('btn')) return;
-    if(e.clientY<60&&e.clientX>stageW()-80) togglePause();
-  });
-  window.addEventListener('resize',function(){ if(hero) hero.y=stageH()-100; });
+  
+  state.enemies = state.enemies.filter(e=> e.hp>0);
+  state.particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.life--;});
+  state.particles = state.particles.filter(p=>p.life>0);
+}
 
-  var need=['bg.jpg','hero.jpg','knife.jpg','monster.jpg','monster2.jpg','boss.jpg','boss2.jpg','effect.jpg'];
-  var missing=[],done=0;
-  need.forEach(function(n){
-    var im=new Image();
-    im.onload=im.onerror=function(){if(++done===need.length&&missing.length)console.warn('[素材缺失]',missing);};
-    im.onerror=function(){missing.push(n);}; im.src=n;
+function draw() {
+  ctx.clearRect(0,0,W,H);
+  if(imgs.bg.complete) {
+    ctx.drawImage(imgs.bg, 0, state.bgY, W, H);
+    ctx.drawImage(imgs.bg, 0, state.bgY-H, W, H);
+  }
+  
+  state.enemies.forEach(e=>{
+    const img = e.type==1?imgs.monster:imgs.monster2;
+    if(img.complete) ctx.drawImage(img, e.x-25, e.y-25, 50, 50);
   });
-})();
+  
+  if(state.boss && imgs.boss.complete) {
+    const bImg = state.boss.type==1?imgs.boss:imgs.boss2;
+    ctx.drawImage(bImg, state.boss.x-50, state.boss.y-50, 100, 100);
+  }
+  
+  if(imgs.hero.complete) ctx.drawImage(imgs.hero, state.hero.x-30, state.hero.y-30, 60, 60);
+  
+  state.knives.forEach(k=>{
+    const kx = state.hero.x + Math.cos(k.angle)*k.r;
+    const ky = state.hero.y + Math.sin(k.angle)*k.r;
+    ctx.save(); ctx.translate(kx, ky); ctx.rotate(k.angle);
+    if(imgs.knife.complete) ctx.drawImage(imgs.knife, -15, -15, 30, 30);
+    ctx.restore();
+  });
+  
+  state.particles.forEach(p=>{
+    if(imgs.effect.complete) ctx.drawImage(imgs.effect, p.x-30, p.y-30, 60, 60);
+  });
+}
+
+let lastT = 0;
+function loop(t) {
+  const dt = Math.min(t-lastT, 50); lastT = t;
+  if(state.running) update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+canvas.addEventListener('touchmove', e=>{
+  e.preventDefault();
+  const touch = e.changedTouches[0];
+  state.hero.targetX = touch.clientX; state.hero.targetY = touch.clientY;
+});
+canvas.addEventListener('mousemove', e=>{
+  state.hero.targetX = e.clientX; state.hero.targetY = e.clientY;
+});
+
+function gameOver() {
+  state.running = false;
+  document.getElementById('finalScore').textContent = state.score;
+  overPanel.style.display = 'block';
+}
+
+document.getElementById('startBtn').addEventListener('click', reset);
+document.getElementById('restartBtn').addEventListener('click', reset);
+
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
