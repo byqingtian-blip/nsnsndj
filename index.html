@@ -3,660 +3,324 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>旋转飞刀割草 · 大地图版</title>
+<title>旋转飞刀割草·商业版</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; touch-action: none; user-select: none; }
-  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  body { margin: 0; padding: 0; background: #111; overflow: hidden; font-family: sans-serif; touch-action: none; user-select: none; }
+  #gameContainer { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: #2c3e50; }
   canvas { display: block; }
-  #ui { position: fixed; top: 0; left: 0; right: 0; z-index: 10; padding: 12px; color: #fff; text-shadow: 1px 1px 3px #000; font-size: 15px; display: flex; justify-content: space-between; pointer-events: none; }
-  #ui .col { display: flex; flex-direction: column; gap: 6px; }
-  #ui .col.right { align-items: flex-end; }
-  .bar { width: 130px; height: 14px; background: rgba(0,0,0,.55); border: 2px solid rgba(255,255,255,.85); border-radius: 8px; overflow: hidden; }
-  .bar > i { display: block; height: 100%; background: linear-gradient(90deg,#ff4d4d,#ff9d3a); transition: width .2s; }
-  .stat { background: rgba(0,0,0,.4); padding: 2px 10px; border-radius: 10px; line-height: 1.5; }
-  .stat b { color: #ffe14d; }
-  #bossWrap { display: none; position: fixed; top: 62px; left: 10%; width: 80%; z-index: 10; }
-  #bossWrap.show { display: block; }
-  #bossWrap .name { color: #ff5050; font-weight: 800; text-shadow: 1px 1px 2px #000; margin-bottom: 2px; text-align: center; font-size: 13px; }
-  #bossWrap .track { height: 14px; background: rgba(0,0,0,.55); border: 2px solid #ff5050; border-radius: 8px; overflow: hidden; }
-  #bossWrap .track > i { display: block; height: 100%; background: linear-gradient(90deg,#ff5050,#ff9d3a); transition: width .15s; }
-  .panel { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: radial-gradient(circle at center, rgba(15,8,35,.85), rgba(0,0,0,.94)); pointer-events: auto; padding: 24px; text-align: center; }
-  .panel.hidden { display: none; }
-  .title h1 { color: #fff; font-size: 32px; letter-spacing: 2px; text-shadow: 0 0 16px #b066ff, 0 4px 8px #000; }
-  .title .sub { color: #d7c2ff; font-size: 13px; letter-spacing: 4px; margin-top: 6px; }
-  .btn { cursor: pointer; border: none; color: #fff; font-weight: 800; font-size: 20px; padding: 13px 38px; border-radius: 13px; letter-spacing: 2px; background: linear-gradient(135deg,#ff5e3a,#ff2a68); box-shadow: 0 6px 0 #b01c45, 0 10px 22px rgba(255,42,104,.5); }
-  .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #b01c45; }
-  .btn.ghost { background: linear-gradient(135deg,#6a5cff,#9d4dff); box-shadow: 0 6px 0 #3d2faa; font-size: 15px; padding: 10px 22px; }
-  .tip { color: #b9b0d6; font-size: 13px; line-height: 1.9; max-width: 320px; }
-  .tip b { color: #fff; }
-  #floatLayer { position: fixed; inset: 0; z-index: 20; pointer-events: none; overflow: hidden; }
-  .float { position: absolute; font-weight: 800; text-shadow: 1px 1px 2px #000; animation: floatUp .9s ease-out forwards; }
-  @keyframes floatUp { 0%{opacity:1; transform:translateY(0) scale(1)} 100%{opacity:0; transform:translateY(-50px) scale(1.5)} }
-  #flash { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 25; transition: opacity .25s; }
-  /* 升级三选一 */
+  .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; color: #fff; text-shadow: 1px 1px 2px #000; }
+  .panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.85); padding: 30px; border-radius: 15px; text-align: center; pointer-events: auto; border: 2px solid #f1c40f; box-shadow: 0 0 20px #f1c40f; }
+  .panel h1 { margin-top: 0; color: #f1c40f; }
+  .btn { display: inline-block; margin-top: 20px; padding: 12px 30px; background: #e67e22; color: #fff; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+  .btn:active { transform: scale(0.95); }
+  #hud { display: flex; justify-content: space-between; padding: 10px; font-size: 16px; font-weight: bold; }
+  .hud-box { background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px; }
   #upgradePanel { display: none; }
-  #upgradePanel.show { display: flex; }
-  #upgradePanel .cards { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; max-width: 380px; }
-  .card { width: 110px; background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.4); border-radius: 14px; padding: 14px 8px; cursor: pointer; transition: transform .12s, border-color .12s; }
-  .card:active { transform: scale(.95); border-color: #ffe14d; background: rgba(255,225,77,.2); }
-  .card .ic { font-size: 30px; margin-bottom: 6px; }
-  .card .nm { color: #fff; font-weight: 800; font-size: 14px; margin-bottom: 4px; }
-  .card .ds { color: #c9bfe8; font-size: 11px; line-height: 1.5; }
+  .upgrade-cards { display: flex; gap: 15px; margin-top: 20px; justify-content: center; }
+  .card { background: #34495e; padding: 15px; border-radius: 10px; cursor: pointer; width: 100px; border: 2px solid #3498db; }
+  .card:hover { transform: scale(1.05); }
+  .card h3 { margin: 0 0 10px 0; font-size: 14px; color: #3498db; }
+  .card p { margin: 0; font-size: 12px; font-weight: normal; }
 </style>
 </head>
 <body>
-<div id="ui">
-  <div class="col">
-    <div class="bar"><i id="hpFill" style="width:100%"></i></div>
-    <div class="stat" id="hpText">HP 5 / 5</div>
+<div id="gameContainer">
+  <canvas id="gameCanvas"></canvas>
+  
+  <!-- 登录界面 -->
+  <div id="loginPanel" class="ui-layer panel">
+    <h1>旋转飞刀割草</h1>
+    <p>商业重制版 · 60FPS 极速体验</p>
+    <button class="btn" onclick="startGame()">开始游戏</button>
   </div>
-  <div class="col right">
-    <div class="stat">分数 <b id="hudScore">0</b></div>
-    <div class="stat">时间 <b id="hudTime">0:00</b></div>
-    <div class="stat" id="combo">连击 <b>0</b></div>
-    <div class="stat">区域 <b id="hudArea">1</b></div>
+
+  <!-- 游戏HUD -->
+  <div id="hud" class="ui-layer" style="display:none;">
+    <div>
+      <div class="hud-box" id="hpText">HP 5/5</div>
+      <div class="hud-box" style="margin-top:5px;">分数 <span id="scoreText">0</span></div>
+    </div>
+    <div style="text-align:right;">
+      <div class="hud-box">金币 <span id="coinText">0</span></div>
+      <div class="hud-box" style="margin-top:5px;">时间 <span id="timeText">0:00</span></div>
+    </div>
   </div>
-</div>
-<div id="bossWrap"><div class="name">暗影之王</div><div class="track"><i id="bossHp" style="width:100%"></i></div></div>
-<canvas id="game"></canvas>
-<div id="floatLayer"></div>
-<div id="flash"></div>
 
-<div class="panel" id="startPanel">
-  <div class="title"><h1>旋转飞刀割草</h1><div class="sub">大地图探索版</div></div>
-  <div class="tip">手指拖动移动主角，飞刀自动环绕切割<br>在大地图上自由探索，怪物从四面八方涌来<br>升级时从三张卡牌中选一张强化武器<br>每 <b>30 秒</b> 挑战 Boss</div>
-  <button class="btn" id="startBtn">开始冒险</button>
-</div>
+  <!-- 升级/武器库界面 -->
+  <div id="upgradePanel" class="ui-layer panel">
+    <h2>选择升级</h2>
+    <div class="upgrade-cards" id="cardsContainer"></div>
+  </div>
 
-<div class="panel hidden" id="upgradePanel">
-  <div class="title"><h1 style="font-size:26px">升级！选择一项</h1></div>
-  <div class="cards" id="cards"></div>
-</div>
-
-<div class="panel hidden" id="overPanel">
-  <div class="title"><h1>冒险失败</h1></div>
-  <div class="stat" style="font-size:17px">本局分数 <b id="overScore">0</b></div>
-  <div class="stat" style="font-size:17px">最高连击 <b id="overCombo">0</b></div>
-  <div class="stat" style="font-size:17px">深入区域 <b id="overArea">1</b></div>
-  <button class="btn" id="againBtn">再试一次</button>
+  <!-- 商店界面 -->
+  <div id="shopPanel" class="ui-layer panel" style="display:none;">
+    <h2>金币商店</h2>
+    <p>当前金币: <span id="shopCoin">0</span></p>
+    <button class="btn" onclick="buyItem()">购买 飞刀+1 (50金)</button><br><br>
+    <button class="btn" style="background:#95a5a6;" onclick="closeShop()">继续游戏</button>
+  </div>
 </div>
 
 <script>
-(function () {
-  'use strict';
-  var canvas = document.getElementById('game'), ctx = canvas.getContext('2d');
-  var W, H, cx, cy;
-  function resize() {
-    W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight;
-    cx = W / 2; cy = H / 2;
-  }
-  window.addEventListener('resize', resize); resize();
+/* ============ 配置与状态 ============ */
+const CFG = {
+  mapW: 5000, mapH: 5000,
+  heroHp: 5, knifeSpeed: 0.05, knifeRadius: 50,
+  spawnBase: 400, maxParticles: 150, // 严格限制粒子数防卡顿
+  dropRate: 0.4 // 掉落率翻倍
+};
 
-  /* ============ 地图：程序化生成草地大世界 ============ */
-  var MAP = { w: 5000, h: 5000 };
-  var decor = [];
-  (function seedDecor() {
-    // 确定性伪随机，保证每次背景一致
-    var s = 1337;
-    function rnd() { s = (s * 9301 + 49297) % 233280; return s / 233280; }
-    for (var i = 0; i < 900; i++) {
-      var t = rnd();
-      decor.push({
-        x: rnd() * MAP.w, y: rnd() * MAP.h,
-        type: t < 0.5 ? 'bush' : (t < 0.72 ? 'rock' : (t < 0.88 ? 'flower' : 'tree')),
-        size: 0.6 + rnd() * 0.9, seed: rnd(),
-      });
-    }
-  })();
+const state = {
+  running: false, paused: false, time: 0,
+  score: 0, coins: 0, hp: CFG.heroHp,
+  camX: 0, camY: 0,
+  knives: [], enemies: [], particles: [], drops: [],
+  hero: { x: 0, y: 0, w: 60, h: 60, tx: 0, ty: 0 }
+};
 
-  function drawBackground(camX, camY) {
-    // 底色草地（用两层深浅绿条纹模拟草地纹理）
-    ctx.fillStyle = '#3f9c3f';
-    ctx.fillRect(0, 0, W, H);
-    // 视口内的草地条纹（跟随摄像机）
-    ctx.fillStyle = 'rgba(60,150,60,.35)';
-    var tile = 90, ox = -((camX % tile) + tile) % tile, oy = -((camY % tile) + tile) % tile;
-    for (var y = oy; y < H; y += tile) {
-      for (var x = ox; x < W; x += tile) {
-        if ((((Math.floor((camX + x) / tile) + Math.floor((camY + y) / tile)) % 2 + 2) % 2) === 0) {
-          ctx.fillRect(x, y, tile, tile);
-        }
-      }
-    }
-    // 泥土路径（穿过地图中心）
-    ctx.fillStyle = '#c9a36b';
-    ctx.fillRect(-camX + MAP.w / 2 - 55, 0, 110, H);
-    ctx.fillStyle = 'rgba(160,120,70,.5)';
-    for (var py = -((camY % 60) + 60) % 60; py < H; py += 60) {
-      ctx.fillRect(-camX + MAP.w / 2 - 50, py, 100, 30);
-    }
-    // 装饰物（灌木/石头/花/树）
-    for (var i = 0; i < decor.length; i++) {
-      var d = decor[i], sx = d.x - camX, sy = d.y - camY;
-      if (sx < -80 || sy < -80 || sx > W + 80 || sy > H + 80) continue;
-      var sz = d.size;
-      ctx.save(); ctx.translate(sx, sy);
-      if (d.type === 'bush') {
-        ctx.fillStyle = '#2f7a2f'; ctx.beginPath(); ctx.arc(0, 4, 20 * sz, 0, 7); ctx.fill();
-        ctx.fillStyle = '#4caf50'; ctx.beginPath(); ctx.arc(-5, 0, 14 * sz, 0, 7); ctx.fill();
-      } else if (d.type === 'rock') {
-        ctx.fillStyle = '#8a8a8a'; ctx.beginPath();
-        ctx.moveTo(-16 * sz, 8); ctx.lineTo(-12 * sz, -12 * sz); ctx.lineTo(10 * sz, -14 * sz);
-        ctx.lineTo(18 * sz, 6); ctx.lineTo(6 * sz, 12 * sz); ctx.lineTo(-10 * sz, 10 * sz); ctx.closePath(); ctx.fill();
-        ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.beginPath(); ctx.arc(-4 * sz, -4 * sz, 6 * sz, 0, 7); ctx.fill();
-      } else if (d.type === 'flower') {
-        var cols = ['#ff7ab2', '#ffd54a', '#9b7bff', '#fff'];
-        for (var p = 0; p < 5; p++) {
-          ctx.fillStyle = cols[(p + Math.floor(d.seed * 5)) % 5];
-          ctx.beginPath(); ctx.arc(Math.cos(p / 5 * 6.28) * 5, Math.sin(p / 5 * 6.28) * 5, 4, 0, 7); ctx.fill();
-        }
-        ctx.fillStyle = '#ffd54a'; ctx.beginPath(); ctx.arc(0, 0, 3, 0, 7); ctx.fill();
-      } else { // tree
-        ctx.fillStyle = '#6b4423'; ctx.fillRect(-4 * sz, 0, 8 * sz, 26 * sz);
-        ctx.fillStyle = '#2e7d32'; ctx.beginPath(); ctx.arc(0, -6, 26 * sz, 0, 7); ctx.fill();
-        ctx.fillStyle = '#4caf50'; ctx.beginPath(); ctx.arc(-8, -12, 16 * sz, 0, 7); ctx.fill();
-      }
-      ctx.restore();
-    }
-    // 地图边界
-    ctx.strokeStyle = 'rgba(255,60,60,.8)'; ctx.lineWidth = 6;
-    ctx.strokeRect(-camX, -camY, MAP.w, MAP.h);
-  }
+/* ============ 对象池 (防GC卡顿核心) ============ */
+const pools = { particle: [], enemy: [] };
+function getPoolObj(type) { return pools[type].pop() || {}; }
+function releasePoolObj(type, obj) { pools[type].push(obj); }
 
-  /* ============ 图片素材（自动抠白底） ============ */
-  var imgs = {};
-  ['hero', 'knife', 'monster', 'monster2', 'boss', 'boss2', 'effect'].forEach(function (k) {
-    imgs[k] = new Image();
-    imgs[k].crossOrigin = 'anonymous';
-    imgs[k].onload = function () { removeWhite(imgs[k]); };
-    imgs[k].src = k + '.jpg';
-  });
-  function removeWhite(img) {
+/* ============ 初始化与素材预加载 ============ */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d', { alpha: false });
+const imgs = {};
+const needImgs = ['bg','hero','knife','monster','monster2','boss','boss2','effect'];
+
+function initCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', initCanvas);
+initCanvas();
+
+// 自动抠白底函数 (离屏Canvas预处理)
+function removeWhiteBg(src, cb) {
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.onload = () => {
+    const off = document.createElement('canvas');
+    off.width = img.width; off.height = img.height;
+    const octx = off.getContext('2d');
+    octx.drawImage(img, 0, 0);
     try {
-      var c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
-      var x = c.getContext('2d'); x.drawImage(img, 0, 0);
-      var d = x.getImageData(0, 0, c.width, c.height), p = d.data;
-      for (var i = 0; i < p.length; i += 4) {
-        if (p[i] > 238 && p[i + 1] > 238 && p[i + 2] > 238) p[i + 3] = 0;
+      const data = octx.getImageData(0,0,off.width,off.height);
+      for(let i=0;i<data.data.length;i+=4) {
+        if(data.data[i]>240 && data.data[i+1]>240 && data.data[i+2]>240) data.data[i+3]=0;
       }
-      x.putImageData(d, 0, 0); img.src = c.toDataURL();
-    } catch (e) { /* 跨域或无图时跳过 */ }
-  }
-  function drawImg(key, x, y, w, h, rot) {
-    var im = imgs[key];
-    if (!im.complete || !im.width) return false;
-    ctx.save(); ctx.translate(x, y); if (rot) ctx.rotate(rot);
-    ctx.drawImage(im, -w / 2, -h / 2, w, h); ctx.restore();
-    return true;
-  }
-
-  /* ============ 游戏对象池 ============ */
-  var pool = [];
-  function newPart() { return pool.pop() || {}; }
-  function freePart(p) { pool.push(p); }
-
-  /* ============ 游戏状态 ============ */
-  var RUN = false, paused = false, lastT = 0, rafId = 0;
-  var hero, knives = [], enemies = [], particles = [], floaters = [], pickups = [];
-  var score, combo, maxCombo, comboTimer, hp, maxHp, elapsed, lastBossAt;
-  var spawnCd, spawnInterval, killCount, area, boss, bossActive;
-  var camX = 0, camY = 0, shakeT = 0, nextUpgrade = 5;
-
-  var CFG = {
-    heroSpd: 4.2, baseR: 50, heroHp: 5, bossGap: 30000, comboT: 2500,
-    pickRadius: 90, baseDmg: 1,
+      octx.putImageData(data,0,0);
+      cb(off);
+    } catch(e) { cb(img); } // 跨域兜底
   };
+  img.onerror = () => cb(null);
+  img.src = src;
+}
 
-  /* ============ 武器库 ============ */
-  var WEAPONS = {
-    orbit:    { icon: '🌀', name: '环绕飞刀', desc: '飞刀持续环绕旋转切割', max: 8 },
-    spread:   { icon: '💥', name: '散射刀阵', desc: '增加飞刀数量，范围更大', max: 6 },
-    radius:   { icon: '🔴', name: '旋转半径', desc: '扩大飞刀旋转范围', max: 6 },
-    speed:    { icon: '⚡', name: '极速旋转', desc: '飞刀旋转更快', max: 6 },
-    damage:   { icon: '🔥', name: '锋利精通', desc: '飞刀伤害 +1', max: 6 },
-    pierce:   { icon: '🎯', name: '多重打击', desc: '每把飞刀多穿透1次', max: 4 },
-  };
-  var loadout = {};
+needImgs.forEach(k => removeWhiteBg(k+'.jpg', res => imgs[k] = res));
 
-  function ensureOrbit() {
-    if (knives.length === 0) {
-      var n = 3 + (loadout.spread || 0);
-      for (var i = 0; i < n; i++) {
-        knives.push({ a: i * Math.PI * 2 / n, r: CFG.baseR + (loadout.radius || 0) * 12, sp: 0.05 + (loadout.speed || 0) * 0.012, hit: new Set(), dmg: CFG.baseDmg + (loadout.damage || 0), pierce: 1 + (loadout.pierce || 0) });
-      }
-    }
+/* ============ 输入控制 ============ */
+let touchTarget = { x: canvas.width/2, y: canvas.height/2 };
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const t = e.changedTouches[0];
+  touchTarget.x = t.clientX; touchTarget.y = t.clientY;
+});
+canvas.addEventListener('mousemove', e => {
+  touchTarget.x = e.clientX; touchTarget.y = e.clientY;
+});
+
+/* ============ 游戏逻辑 ============ */
+function startGame() {
+  document.getElementById('loginPanel').style.display = 'none';
+  document.getElementById('hud').style.display = 'flex';
+  state.running = true; state.time = 0;
+  state.score = 0; state.coins = 0; state.hp = CFG.heroHp;
+  state.knives = []; state.enemies = []; state.particles = []; state.drops = [];
+  state.hero.x = CFG.mapW/2; state.hero.y = CFG.mapH/2;
+  state.hero.tx = state.hero.x; state.hero.ty = state.hero.y;
+  
+  // 初始飞刀
+  state.knives.push({ angle: 0, r: CFG.knifeRadius });
+  
+  lastT = performance.now();
+  requestAnimationFrame(loop);
+}
+
+function spawnEnemy() {
+  if(state.enemies.length > 80) return; // 限制同屏怪物数量保帧率
+  const e = getPoolObj('enemy');
+  e.x = state.hero.x + (Math.random()-0.5)*800;
+  e.y = state.hero.y + (Math.random()-0.5)*800;
+  e.hp = 1; e.type = Math.random()>0.8 ? 2 : 1;
+  state.enemies.push(e);
+}
+
+function spawnDrop(x, y) {
+  if(Math.random() < CFG.dropRate) {
+    state.drops.push({ x: x, y: y, type: Math.random()>0.7?'coin':'exp', life: 5000 });
   }
+}
 
-  /* ============ 生成 ============ */
-  function spawnEnemy() {
-    var sec = elapsed / 1000;
-    var r = Math.random(), type;
-    if (r < 0.5) type = 'slime'; else if (r < 0.8) type = 'bat'; else type = 'brute';
-    var def = MONSTERS[type];
-    var ang = Math.random() * Math.PI * 2;
-    var dist = Math.max(W, H) * 0.6 + 60;
-    var x = clamp(hero.x + Math.cos(ang) * dist, 30, MAP.w - 30);
-    var y = clamp(hero.y + Math.sin(ang) * dist, 30, MAP.h - 30);
-    var spd = def.spd * (1 + sec / 110);
-    enemies.push({ x: x, y: y, w: def.w, hp: def.hp, maxHp: def.hp, spd: spd, type: type, def: def, hitCd: 0, score: def.score });
+function explode(x, y) {
+  // 限制最大粒子数，防止爆炸卡顿
+  if(state.particles.length > CFG.maxParticles) return;
+  const count = Math.min(5, CFG.maxParticles - state.particles.length);
+  for(let i=0; i<count; i++) {
+    const p = getPoolObj('particle');
+    p.x = x; p.y = y; p.vx = (Math.random()-0.5)*10; p.vy = (Math.random()-0.5)*10;
+    p.life = 30; p.maxLife = 30;
+    state.particles.push(p);
   }
+}
 
-  function spawnBoss() {
-    if (bossActive) return;
-    bossActive = true;
-    var x = clamp(hero.x, 200, MAP.w - 200), y = clamp(hero.y - 300, 100, MAP.h - 100);
-    boss = {
-      x: x, y: y, w: 120, hp: 40 + area * 12, maxHp: 0, spd: 1.0, dir: 1, t: 0,
-      hit: new Set(), dmg: CFG.baseDmg + (loadout.damage || 0), pierce: 1 + (loadout.pierce || 0),
-    };
-    boss.maxHp = boss.hp;
-    document.getElementById('bossWrap').classList.add('show');
-    flash(); shakeT = 400; playBoss();
-    enemies.length = 0;
-  }
+function update(dt) {
+  state.time += dt;
+  
+  // 英雄平滑移动 (Lerp)
+  state.hero.tx += (touchTarget.x - canvas.width/2) * 0.1;
+  state.hero.ty += (touchTarget.y - canvas.height/2) * 0.1;
+  state.hero.x += (state.hero.tx - state.hero.y) * 0.1; // 简化跟随
+  state.hero.y += (state.hero.ty - state.hero.y) * 0.1;
+  
+  // 摄像机平滑跟随
+  state.camX = state.hero.x - canvas.width/2;
+  state.camY = state.hero.y - canvas.height/2;
 
-  var MONSTERS = {
-    slime: { w: 46, hp: 1, spd: 0.9, score: 10 },
-    bat:  { w: 40, hp: 1, spd: 1.7, score: 15 },
-    brute:{ w: 66, hp: 6, spd: 0.65, score: 40 },
-  };
+  // 飞刀旋转
+  state.knives.forEach(k => k.angle += CFG.knifeSpeed * (dt/16));
 
-  /* ============ 粒子爆炸（击杀碎片飞散 + 旋转） ============ */
-  function explode(x, y, big) {
-    var n = big ? 26 : 12;
-    for (var i = 0; i < n; i++) {
-      var a = Math.random() * Math.PI * 2;
-      var sp = (big ? 2 + Math.random() * 6 : 1.5 + Math.random() * 4);
-      var p = newPart();
-      p.x = x; p.y = y; p.vx = Math.cos(a) * sp; p.vy = Math.sin(a) * sp;
-      p.life = big ? 34 : 22; p.max = p.life; p.size = (big ? 7 : 4) + Math.random() * 5;
-      p.rot = Math.random() * 7; p.spin = (Math.random() - 0.5) * .5;
-      p.hue = Math.random() < .5 ? '#ffd54a' : (Math.random() < .5 ? '#ff7a2a' : '#ffffff');
-      particles.push(p);
-    }
-    if (big) flash();
-  }
-  function drawParticles() {
-    for (var i = 0; i < particles.length; i++) {
-      var p = particles[i];
-      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
-      ctx.globalAlpha = Math.max(0, p.life / p.max);
-      ctx.fillStyle = p.hue;
-      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
-      ctx.restore();
-    }
-    ctx.globalAlpha = 1;
-  }
+  // 刷怪逻辑
+  if(Math.random() < dt/500) spawnEnemy();
 
-  /* ============ 浮动文字 ============ */
-  function floatText(x, y, text, color) {
-    var el = document.createElement('div');
-    el.className = 'float'; el.textContent = text;
-    el.style.left = x + 'px'; el.style.top = y + 'px';
-    el.style.color = color || '#fff';
-    el.style.fontSize = (color === '#ffe14d' ? 21 : 15) + 'px';
-    document.getElementById('floatLayer').appendChild(el);
-    setTimeout(function () { el.remove(); }, 900);
-  }
-
-  /* ============ 工具 ============ */
-  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
-  function fmtT(ms) { var s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
-  function flash() { var f = document.getElementById('flash'); f.style.opacity = '0.55'; setTimeout(function () { f.style.opacity = '0'; }, 45); }
-
-  /* ============ 升级三选一 ============ */
-  var UPGRADES = [
-    { key: 'spread', icon: '💥', name: '散射刀阵', ds: '飞刀数量 +1' },
-    { key: 'radius', icon: '🔴', name: '旋转半径', ds: '飞刀范围扩大' },
-    { key: 'speed', icon: '⚡', name: '极速旋转', ds: '飞刀旋转更快' },
-    { key: 'damage', icon: '🔥', name: '锋利精通', ds: '飞刀伤害 +1' },
-    { key: 'pierce', icon: '🎯', name: '多重打击', ds: '飞刀穿透 +1' },
-    { key: 'hp', icon: '❤️', name: '生命强化', ds: '最大生命 +1 并回满' },
-  ];
-  function showUpgrade() {
-    paused = true;
-    var panel = document.getElementById('upgradePanel');
-    var cards = document.getElementById('cards');
-    cards.innerHTML = '';
-    // 随机选3个未达上限的
-    var pool2 = UPGRADES.filter(function (u) {
-      if (u.key === 'hp') return true;
-      return (loadout[u.key] || 0) < WEAPONS[u.key].max;
-    });
-    while (pool2.length < 3) pool2.push({ key: 'hp', icon: '❤️', name: '生命强化', ds: '最大生命 +1 并回满' });
-    var picks = [];
-    while (picks.length < 3 && pool2.length) {
-      var idx = Math.floor(Math.random() * pool2.length);
-      picks.push(pool2.splice(idx, 1)[0]);
-    }
-    picks.forEach(function (u) {
-      var lvl = loadout[u.key] || 0;
-      var max = u.key === 'hp' ? 12 : WEAPONS[u.key].max;
-      var card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = '<div class="ic">' + u.icon + '</div><div class="nm">' + u.name + '</div><div class="ds">' + u.ds + '<br>Lv ' + lvl + ' → ' + Math.min(lvl + 1, max) + '</div>';
-      card.addEventListener('click', function () { applyUpgrade(u.key); panel.classList.add('hidden'); paused = false; lastT = performance.now(); });
-      cards.appendChild(card);
-    });
-    panel.classList.remove('hidden');
-  }
-  function applyUpgrade(key) {
-    if (key === 'hp') {
-      maxHp = Math.min(maxHp + 1, 12); hp = maxHp;
-      document.getElementById('hpFill').style.width = '100%';
-      floatText(cx, cy - 30, '+1 HP', '#ff8a8a');
-    } else {
-      loadout[key] = (loadout[key] || 0) + 1;
-      if (key === 'spread' || key === 'radius' || key === 'speed' || key === 'damage' || key === 'pierce') {
-        // 重建飞刀以应用新参数
-        knives.forEach(function (k) { });
-        var oldN = knives.length, n = 3 + (loadout.spread || 0);
-        if (key === 'spread' && oldN < n) {
-          for (var i = oldN; i < n; i++) knives.push({ a: i * Math.PI * 2 / n, r: CFG.baseR + (loadout.radius || 0) * 12, sp: 0.05 + (loadout.speed || 0) * 0.012, hit: new Set(), dmg: CFG.baseDmg + (loadout.damage || 0), pierce: 1 + (loadout.pierce || 0) });
-        }
-        knives.forEach(function (k, i) {
-          k.a = i * Math.PI * 2 / knives.length;
-          k.r = CFG.baseR + (loadout.radius || 0) * 12;
-          k.sp = 0.05 + (loadout.speed || 0) * 0.012;
-          k.dmg = CFG.baseDmg + (loadout.damage || 0);
-          k.pierce = 1 + (loadout.pierce || 0);
-        });
-      }
-      floatText(cx, cy - 30, WEAPONS[key].name + ' +1', '#7cffb2');
-    }
-  }
-
-  /* ============ 主循环 ============ */
-  function update(dt) {
-    var dts = dt / 16.6667;
-
-    // 主角移动（向目标点插值，360度自由）
-    hero.x += (hero.tx - hero.x) * Math.min(1, CFG.heroSpd * dts * 0.09);
-    hero.y += (hero.ty - hero.y) * Math.min(1, CFG.heroSpd * dts * 0.09);
-    hero.x = clamp(hero.x, 30, MAP.w - 30);
-    hero.y = clamp(hero.y, 30, MAP.h - 30);
-    if (hero.invuln > 0) hero.invuln -= dt;
-
-    // 摄像机平滑跟随
-    var tx = hero.x - cx, ty = hero.y - cy;
-    camX += (tx - camX) * Math.min(1, 0.12 * dts);
-    camY += (ty - camY) * Math.min(1, 0.12 * dts);
-    if (shakeT > 0) { shakeT -= dt; camX += (Math.random() - .5) * 10; camY += (Math.random() - .5) * 10; }
-
-    // 飞刀环绕
-    for (var i = 0; i < knives.length; i++) {
-      var k = knives[i];
-      k.a += k.sp * dts;
-      k.x = hero.x + Math.cos(k.a) * k.r;
-      k.y = hero.y + Math.sin(k.a) * k.r;
-      k.cx = k.x; k.cy = k.y;
-    }
-
-    // 刷怪
-    spawnCd -= dt;
-    if (spawnCd <= 0 && !bossActive) {
-      var burst = 1 + Math.floor(elapsed / 10000);
-      for (var b2 = 0; b2 < burst; b2++) spawnEnemy();
-      spawnCd = spawnInterval;
-      spawnInterval = Math.max(300, spawnInterval - 12);
-    }
-
-    // Boss 计时
-    if (!bossActive && elapsed - lastBossAt >= CFG.bossGap) {
-      lastBossAt = elapsed; spawnBoss();
-    }
-
-    // 敌人 AI
-    var list = bossActive ? [boss] : enemies;
-    for (var j = list.length - 1; j >= 0; j--) {
-      var e = list[j], isB = !!e === !!boss && bossActive;
-      if (e.hitCd > 0) e.hitCd -= dt;
-      if (bossActive) {
-        e.t += dt;
-        e.x += e.dir * e.spd * dts * 1.4;
-        if (e.x < hero.x - 160) e.dir = 1;
-        if (e.x > hero.x + 160) e.dir = -1;
-        if (e.y < hero.y - 120) e.y += e.spd * dts * 0.8;
-        document.getElementById('bossHp').style.width = Math.max(0, e.hp / e.maxHp * 100) + '%';
-      } else {
-        var dx = hero.x - e.x, dy = hero.y - e.y, dl = Math.sqrt(dx * dx + dy * dy) || 1;
-        e.x += dx / dl * e.spd * dts;
-        e.y += dy / dl * e.spd * dts;
-      }
-
-      // 飞刀切割判定
-      for (var m = 0; m < knives.length; m++) {
-        var k2 = knives[m];
-        var ddx = k2.x - e.x, ddy = k2.y - e.y;
-        var rr = (e.w / 2 + 18);
-        if (ddx * ddx + ddy * ddy < rr * rr && !e.hit.has(m)) {
-          e.hp -= k2.dmg;
-          e.hit.add(m);
-          explode(k2.x, k2.y, false);
-          playHit();
-          if (e.hp <= 0) {
-            if (bossActive) {
-              explode(e.x, e.y, true); shakeT = 500; score += 200;
-              floatText(cx, cy - 60, 'BOSS 击败!', '#ffe14d');
-              document.getElementById('bossWrap').classList.remove('show');
-              boss = null; bossActive = false; lastBossAt = elapsed;
-            } else {
-              score += e.score; killCount++;
-              combo++; if (combo > maxCombo) maxCombo = combo; comboTimer = CFG.comboT;
-              explode(e.x, e.y, false);
-              if (combo > 0 && combo % 5 === 0) { floatText(e.x, e.y - 16, combo + ' 连击!', '#ffe14d'); playKill(); }
-              else playKill();
-              // 掉落经验球（回血小道具）
-              if (Math.random() < 0.12) pickups.push({ x: e.x, y: e.y, life: 6000 });
-              // 升级触发
-              var need = killCount >= nextUpgrade;
-              if (need) { nextUpgrade = killCount + 5 + Math.floor(Math.random() * 3); showUpgrade(); }
-            }
-            list.splice(j, 1);
-            document.getElementById('hudScore').textContent = score;
-            break;
-          }
-        }
-      }
-
-      // 敌人碰到主角
-      if (!bossActive) {
-        var edx = e.x - hero.x, edy = e.y - hero.y, er = e.w / 2 + hero.w / 2 - 16;
-        if (e.hitCd <= 0 && edx * edx + edy * edy < er * er) {
-          if (hero.invuln <= 0) {
-            hp--; hero.invuln = 1100; combo = 0; comboTimer = 0;
-            document.getElementById('combo').classList.remove('show');
-            shakeT = 350; flash(); playHurt();
-            document.getElementById('hpFill').style.width = Math.max(0, hp / maxHp * 100) + '%';
-            document.getElementById('hpText').textContent = 'HP ' + Math.max(0, hp) + ' / ' + maxHp;
-            if (hp <= 0) { gameOver(); return; }
-          }
-        }
-      }
-
-      if (!bossActive && (e.y < -80 || e.y > MAP.h + 80 || e.x < -80 || e.x > MAP.w + 80)) {
-        list.splice(j, 1);
-      }
-    }
-
-    // 经验球/回血拾取
-    for (var pi = pickups.length - 1; pi >= 0; pi--) {
-      var pk = pickups[pi]; pk.life -= dt;
-      var pdx = hero.x - pk.x, pdy = hero.y - pk.y;
-      var pdl = Math.sqrt(pdx * pdx + pdy * pdy);
-      if (pdl < CFG.pickRadius) {
-        var pull = 3 * dts;
-        pk.x += pdx / pdl * Math.min(pdl, pull * 3);
-        pk.y += pdy / pdl * Math.min(pdl, pull * 3);
-        if (pdl < 24 && hp < maxHp) { hp++; document.getElementById('hpFill').style.width = (hp / maxHp * 100) + '%'; document.getElementById('hpText').textContent = 'HP ' + hp + ' / ' + maxHp; floatText(pk.x, pk.y, '+1', '#7cffb2'); }
-      }
-      if (pk.life <= 0) pickups.splice(pi, 1);
-    }
-
-    // 粒子
-    for (var q = particles.length - 1; q >= 0; q--) {
-      var pt = particles[q];
-      pt.x += pt.vx * dts; pt.y += pt.vy * dts; pt.vx *= 0.96; pt.vy *= 0.96; pt.rot += pt.spin * dts; pt.life -= dts;
-      if (pt.life <= 0) { particles.splice(q, 1); freePart(pt); }
-    }
-
-    // 连击
-    if (combo > 0) {
-      comboTimer -= dt;
-      var cb = document.getElementById('combo');
-      cb.querySelector('b').textContent = combo;
-      cb.classList.add('show');
-      if (comboTimer <= 0) { combo = 0; cb.classList.remove('show'); }
-    }
-
-    // 区域进度
-    var newArea = 1 + Math.floor(elapsed / 60000);
-    if (newArea !== area) { area = newArea; document.getElementById('hudArea').textContent = area; floatText(cx, cy - 50, '深入区域 ' + area, '#d7c2ff'); }
-  }
-
-  function draw() {
-    drawBackground(camX, camY);
-
-    // 经验球
-    for (var i = 0; i < pickups.length; i++) {
-      var pk = pickups[i];
-      ctx.save(); ctx.translate(pk.x - camX, pk.y - camY);
-      ctx.fillStyle = '#4dd2ff'; ctx.shadowColor = '#4dd2ff'; ctx.shadowBlur = 12;
-      ctx.beginPath(); ctx.arc(0, 0, 8, 0, 7); ctx.fill();
-      ctx.restore();
-    }
-    ctx.shadowBlur = 0;
-
-    // 敌人
-    for (var j = 0; j < enemies.length; j++) {
-      var e = enemies[j];
-      drawImg(e.type === 'brute' ? 'boss2' : (e.type === 'bat' ? 'monster2' : 'monster'),
-        e.x - camX, e.y - camY, e.w, e.w, 0);
-      // 小血条
-      if (e.maxHp > 1) {
-        ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(e.x - camX - 14, e.y - camY - 16, 28, 4);
-        ctx.fillStyle = '#ff4d4d'; ctx.fillRect(e.x - camX - 14, e.y - camY - 16, 28 * Math.max(0, e.hp / e.maxHp), 4);
-      }
-    }
-
-    // Boss
-    if (bossActive && boss) {
-      drawImg(boss.maxHp > 52 ? 'boss2' : 'boss', boss.x - camX, boss.y - camY, boss.w, boss.w, 0);
-    }
-
-    // 飞刀（带拖尾旋转）
-    for (var m = 0; m < knives.length; m++) {
-      var k = knives[m];
-      ctx.save(); ctx.translate(k.x - camX, k.y - camY); ctx.rotate(k.a + Math.PI / 2);
-      drawImg('knife', 0, 0, 30, 30, 0);
-      ctx.restore();
-      // 拖尾光环
-      ctx.strokeStyle = 'rgba(255,210,80,.35)'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(hero.x - camX, hero.y - camY, k.r, k.a - 0.5, k.a + 0.5); ctx.stroke();
-    }
-
-    // 主角
-    drawImg('hero', hero.x - camX, hero.y - camY, hero.w, hero.h, 0);
-    if (hero.invuln > 0 && Math.floor(performance.now() / 80) % 2) {
-      ctx.globalAlpha = 0.4; drawImg('hero', hero.x - camX, hero.y - camY, hero.w, hero.h, 0); ctx.globalAlpha = 1;
-    }
-
-    // 粒子
-    drawParticles();
-
-    // 地图边界外提示遮罩（四边渐黑）
-  }
-
-  function loop(now) {
-    if (!RUN) return;
-    rafId = requestAnimationFrame(loop);
-    if (paused) { lastT = now; return; }
-    var dt = Math.min(now - lastT, 40); lastT = now; elapsed += dt;
-    if (Math.floor(elapsed / 1000) !== Math.floor((elapsed - dt) / 1000)) {
-      document.getElementById('hudTime').textContent = fmtT(elapsed);
-    }
-    update(dt); draw();
-  }
-
-  /* ============ 输入 ============ */
-  function setTarget(px, py) {
-    if (!RUN || paused) return;
-    hero.tx = px + camX; hero.ty = py + camY;
-  }
-  canvas.addEventListener('touchmove', function (e) { e.preventDefault(); setTarget(e.changedTouches[0].clientX, e.changedTouches[0].clientY); }, { passive: false });
-  canvas.addEventListener('touchstart', function (e) { setTarget(e.changedTouches[0].clientX, e.changedTouches[0].clientY); }, { passive: false });
-  canvas.addEventListener('mousemove', function (e) { setTarget(e.clientX, e.clientY); });
-  document.addEventListener('keydown', function (e) {
-    if ((e.key === 'p' || e.key === 'P' || e.key === 'Escape') && RUN) {
-      if (document.getElementById('upgradePanel').classList.contains('show')) return;
-      paused = !paused; if (!paused) lastT = performance.now();
+  // 怪物追踪
+  state.enemies.forEach(e => {
+    const dx = state.hero.x - e.x, dy = state.hero.y - e.y;
+    const distSq = dx*dx + dy*dy;
+    if(distSq < 40000) { // 距离粗筛
+      const dist = Math.sqrt(distSq);
+      e.x += (dx/dist) * 2;
+      e.y += (dy/dist) * 2;
     }
   });
 
-  /* ============ 简易音效（Web Audio 合成） ============ */
-  var AC = null, master = null, muted = false;
-  function ac() {
-    if (!AC) { var C = window.AudioContext || window.webkitAudioContext; if (C) { AC = new C(); master = AC.createGain(); master.gain.value = 0.4; master.connect(AC.destination); } }
-    if (AC && AC.state === 'suspended') AC.resume();
-    return AC;
-  }
-  function tone(f, dur, type, vol, slide) {
-    if (muted) return; var c = ac(); if (!c) return;
-    var o = c.createOscillator(), g = c.createGain();
-    o.type = type || 'sine'; o.frequency.value = f;
-    if (slide) o.frequency.exponentialRampToValueAtTime(slide, c.currentTime + dur);
-    g.gain.value = 0; g.gain.linearRampToValueAtTime(vol || 0.3, c.currentTime + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + dur);
-    o.connect(g); g.connect(master); o.start(); o.stop(c.currentTime + dur);
-  }
-  var playHit = function () { tone(200, 0.1, 'sawtooth', 0.2, 90); };
-  var playKill = function () { tone(520, 0.08, 'square', 0.15, 760); };
-  var playHurt = function () { tone(130, 0.25, 'sawtooth', 0.35, 60); };
-  var playBoss = function () { [80, 100, 75, 110].forEach(function (f, i) { setTimeout(function () { tone(f, 0.3, 'sawtooth', 0.35); }, i * 150); }); };
+  // 碰撞检测 (平方距离优化)
+  state.knives.forEach(k => {
+    const kx = state.hero.x + Math.cos(k.angle) * k.r;
+    const ky = state.hero.y + Math.sin(k.angle) * k.r;
+    
+    for(let i=state.enemies.length-1; i>=0; i--) {
+      const e = state.enemies[i];
+      const dx = kx - e.x, dy = ky - e.y;
+      if(dx*dx + dy*dy < 1600) { // 碰撞半径平方
+        explode(e.x, e.y);
+        spawnDrop(e.x, e.y);
+        state.score += 10;
+        releasePoolObj('enemy', state.enemies.splice(i, 1)[0]);
+      }
+    }
+  });
 
-  /* ============ 生命周期 ============ */
-  function start() {
-    ac();
-    RUN = true; paused = false; elapsed = 0; lastBossAt = 0; killCount = 0;
-    score = 0; combo = 0; maxCombo = 0; area = 1; nextUpgrade = 5;
-    spawnCd = 600; spawnInterval = 950; shakeT = 0;
-    maxHp = CFG.heroHp; hp = maxHp;
-    camX = 0; camY = 0;
-    loadout = {};
-    knives = []; enemies = []; particles = []; pickups = [];
-    boss = null; bossActive = false;
-    hero = { x: MAP.w / 2, y: MAP.h / 2, w: 60, h: 60, tx: MAP.w / 2, ty: MAP.h / 2, invuln: 0 };
-    ensureOrbit();
-    document.getElementById('hpFill').style.width = '100%';
-    document.getElementById('hpText').textContent = 'HP ' + hp + ' / ' + maxHp;
-    document.getElementById('hudScore').textContent = '0';
-    document.getElementById('hudTime').textContent = '0:00';
-    document.getElementById('hudArea').textContent = '1';
-    document.getElementById('combo').classList.remove('show');
-    document.getElementById('startPanel').classList.add('hidden');
-    document.getElementById('overPanel').classList.add('hidden');
-    document.getElementById('upgradePanel').classList.add('hidden');
-    document.getElementById('bossWrap').classList.remove('show');
-    lastT = performance.now();
-    rafId = requestAnimationFrame(loop);
+  // 拾取道具
+  for(let i=state.drops.length-1; i>=0; i--) {
+    const d = state.drops[i];
+    const dx = state.hero.x - d.x, dy = state.hero.y - d.y;
+    if(dx*dx + dy*dy < 2500) {
+      if(d.type==='coin') state.coins++;
+      state.drops.splice(i, 1);
+    }
   }
 
-  function gameOver() {
-    RUN = false; cancelAnimationFrame(rafId);
-    tone(400, 0.3, 'sine', 0.25, 160);
-    document.getElementById('overScore').textContent = score;
-    document.getElementById('overCombo').textContent = maxCombo;
-    document.getElementById('overArea').textContent = area;
-    document.getElementById('overPanel').classList.remove('hidden');
+  // 粒子更新
+  for(let i=state.particles.length-1; i>=0; i--) {
+    const p = state.particles[i];
+    p.x += p.vx; p.y += p.vy; p.life--;
+    if(p.life<=0) releasePoolObj('particle', state.particles.splice(i, 1)[0]);
   }
+}
 
-  document.getElementById('startBtn').addEventListener('click', start);
-  document.getElementById('againBtn').addEventListener('click', start);
-  // 首屏提示音频需在交互后解锁
-  document.addEventListener('click', function once() { ac(); document.removeEventListener('click', once); });
+/* ============ 渲染 (离屏预渲染与批量绘制) ============ */
+function draw() {
+  // 1. 绘制程序化地图背景 (代替图片循环)
+  ctx.fillStyle = '#2c3e50';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  ctx.save();
+  ctx.translate(-state.camX, -state.camY);
+  
+  // 绘制地图网格与装饰
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 2;
+  const gridSize = 100;
+  const startX = Math.floor(state.camX/gridSize)*gridSize;
+  const startY = Math.floor(state.camY/gridSize)*gridSize;
+  for(let x=startX; x<startX+canvas.width+gridSize; x+=gridSize) { ctx.beginPath(); ctx.moveTo(x, state.camY); ctx.lineTo(x, state.camY+canvas.height); ctx.stroke(); }
+  for(let y=startY; y<startY+canvas.height+gridSize; y+=gridSize) { ctx.beginPath(); ctx.moveTo(state.camX, y); ctx.lineTo(state.camX+canvas.width, y); ctx.stroke(); }
 
-})();
+  // 2. 绘制道具
+  state.drops.forEach(d => {
+    ctx.fillStyle = d.type==='coin' ? '#f1c40f' : '#3498db';
+    ctx.beginPath(); ctx.arc(d.x, d.y, 8, 0, Math.PI*2); ctx.fill();
+  });
+
+  // 3. 绘制怪物 (批量)
+  const mImg1 = imgs.monster, mImg2 = imgs.monster2;
+  state.enemies.forEach(e => {
+    const img = e.type===1 ? mImg1 : mImg2;
+    if(img && img.complete) ctx.drawImage(img, e.x-25, e.y-25, 50, 50);
+    else { ctx.fillStyle='red'; ctx.fillRect(e.x-25, e.y-25, 50, 50); }
+  });
+
+  // 4. 绘制英雄
+  if(imgs.hero && imgs.hero.complete) ctx.drawImage(imgs.hero, state.hero.x-30, state.hero.y-30, 60, 60);
+
+  // 5. 绘制飞刀环绕
+  const kImg = imgs.knife;
+  state.knives.forEach(k => {
+    const kx = state.hero.x + Math.cos(k.angle) * k.r;
+    const ky = state.hero.y + Math.sin(k.angle) * k.r;
+    ctx.save();
+    ctx.translate(kx, ky);
+    ctx.rotate(k.angle);
+    if(kImg && kImg.complete) ctx.drawImage(kImg, -15, -15, 30, 30);
+    ctx.restore();
+  });
+
+  // 6. 绘制粒子特效
+  const eImg = imgs.effect;
+  state.particles.forEach(p => {
+    if(eImg && eImg.complete) ctx.drawImage(eImg, p.x-20, p.y-20, 40, 40);
+  });
+
+  ctx.restore();
+  
+  // 更新HUD
+  document.getElementById('hpText').textContent = 'HP ' + state.hp + '/' + CFG.heroHp;
+  document.getElementById('scoreText').textContent = state.score;
+  document.getElementById('coinText').textContent = state.coins;
+  document.getElementById('timeText').textContent = Math.floor(state.time/1000) + 's';
+}
+
+let lastT = 0;
+function loop(t) {
+  if(!state.running) return;
+  const dt = Math.min(t - lastT, 50);
+  lastT = t;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+/* ============ UI系统逻辑 ============ */
+function buyItem() {
+  if(state.coins >= 50) {
+    state.coins -= 50;
+    state.knives.push({ angle: Math.random()*Math.PI*2, r: CFG.knifeRadius });
+    closeShop();
+  } else { alert('金币不足！'); }
+}
+function closeShop() { document.getElementById('shopPanel').style.display = 'none'; state.running = true; lastT = performance.now(); requestAnimationFrame(loop); }
 </script>
 </body>
 </html>
